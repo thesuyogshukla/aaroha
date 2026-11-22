@@ -29,6 +29,7 @@ void main() {
       replayBeforeRetry: false,
       giveUpAfter: 5,
       missReveal: MissReveal.hint,
+      answerBy: AnswerBy.name,
     );
     final back = PracticeSettings.fromJson(s.toJson());
     expect(back.toJson(), s.toJson());
@@ -41,6 +42,7 @@ void main() {
     final judge = s.judge(48000);
     expect(judge.tuning, Tuning.just);
     expect(judge.strictIntonation, isFalse);
+    expect(s.answerBy, AnswerBy.play, reason: 'playing back stays the default');
   });
 
   test('a round passed with an out-of-tune note counts as a first-try pass', () {

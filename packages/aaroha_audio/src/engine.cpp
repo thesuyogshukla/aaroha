@@ -50,6 +50,7 @@ struct ar_engine {
   int sample_rate;
   ma_device device{};
   bool device_ready = false;
+  bool capture_device = true;  // open the mic on the next start
   int input_preset = AR_PRESET_DEFAULT;
 
   std::atomic<int64_t> frames{0};
@@ -173,7 +174,8 @@ void worker_loop(ar_engine* e) {
 }
 
 ma_result open_device(ar_engine* e, int preset) {
-  ma_device_config config = ma_device_config_init(ma_device_type_duplex);
+  ma_device_config config = ma_device_config_init(
+      preset == AR_PRESET_NONE ? ma_device_type_playback : ma_device_type_duplex);
   config.sampleRate = static_cast<ma_uint32>(e->sample_rate);
   config.capture.format = ma_format_f32;
   config.capture.channels = 1;
@@ -229,12 +231,17 @@ int32_t ar_engine_start(ar_engine* e) {
 
   // Prefer the rawest mic path; fall back where a preset isn't supported.
   ma_result result = MA_ERROR;
-  for (int preset : {AR_PRESET_UNPROCESSED, AR_PRESET_VOICE_RECOGNITION,
-                     AR_PRESET_DEFAULT}) {
-    result = open_device(e, preset);
-    if (result == MA_SUCCESS) {
-      e->input_preset = preset;
-      break;
+  if (!e->capture_device) {
+    result = open_device(e, AR_PRESET_NONE);
+    if (result == MA_SUCCESS) e->input_preset = AR_PRESET_NONE;
+  } else {
+    for (int preset : {AR_PRESET_UNPROCESSED, AR_PRESET_VOICE_RECOGNITION,
+                       AR_PRESET_DEFAULT}) {
+      result = open_device(e, preset);
+      if (result == MA_SUCCESS) {
+        e->input_preset = preset;
+        break;
+      }
     }
   }
   if (result != MA_SUCCESS) return result;
@@ -250,6 +257,10 @@ int32_t ar_engine_start(ar_engine* e) {
     return result;
   }
   return MA_SUCCESS;
+}
+
+void ar_engine_set_capture(ar_engine* e, int32_t on) {
+  if (e) e->capture_device = on != 0;
 }
 
 void ar_engine_stop(ar_engine* e) {

@@ -8,6 +8,16 @@ enum PracticeMode {
   final String label;
 }
 
+/// How the player answers: play it back on the flute, or name it by tapping
+/// swar buttons (Listen & name, docs/08 M2-B; no mic).
+enum AnswerBy {
+  play('Play it'),
+  name('Name it');
+
+  const AnswerBy(this.label);
+  final String label;
+}
+
 /// When the target's notation is shown (docs/08 M2-A). With "After a miss,
 /// show: the answer", a miss also reveals it.
 enum ShowTarget {
@@ -60,6 +70,7 @@ enum TuningChoice {
 class PracticeSettings {
   const PracticeSettings({
     this.mode = PracticeMode.single,
+    this.answerBy = AnswerBy.play,
     this.swarSet = SwarSet.shuddha,
     this.range = SaptakRange.madhya,
     this.showTarget = ShowTarget.roundEnd,
@@ -80,6 +91,9 @@ class PracticeSettings {
   });
 
   final PracticeMode mode;
+  final AnswerBy answerBy;
+
+  bool get naming => answerBy == AnswerBy.name;
   final SwarSet swarSet;
   final SaptakRange range;
   final ShowTarget showTarget;
@@ -120,6 +134,7 @@ class PracticeSettings {
 
   PracticeSettings copyWith({
     PracticeMode? mode,
+    AnswerBy? answerBy,
     SwarSet? swarSet,
     SaptakRange? range,
     ShowTarget? showTarget,
@@ -139,6 +154,7 @@ class PracticeSettings {
     MissReveal? missReveal,
   }) => PracticeSettings(
     mode: mode ?? this.mode,
+    answerBy: answerBy ?? this.answerBy,
     swarSet: swarSet ?? this.swarSet,
     range: range ?? this.range,
     showTarget: showTarget ?? this.showTarget,
@@ -160,6 +176,7 @@ class PracticeSettings {
 
   Map<String, dynamic> toJson() => {
     'mode': mode.name,
+    'answerBy': answerBy.name,
     'swarSet': swarSet.name,
     'range': range.name,
     'showTarget': showTarget.name,
@@ -185,6 +202,7 @@ class PracticeSettings {
     const d = PracticeSettings();
     return PracticeSettings(
       mode: byName(PracticeMode.values, j['mode'], d.mode),
+      answerBy: byName(AnswerBy.values, j['answerBy'], d.answerBy),
       swarSet: byName(SwarSet.values, j['swarSet'], d.swarSet),
       range: byName(SaptakRange.values, j['range'], d.range),
       // Before M2-A this was "notation": shown / afterAttempt / hidden.

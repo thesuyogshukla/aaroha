@@ -59,7 +59,7 @@ Single-header, public domain / MIT-0. Backends: AAudio and OpenSL ES (Android), 
 
 ### Engine
 
-One full-duplex `ma_device` (playback + capture) at **48 kHz, mono**, low-latency performance profile.
+One full-duplex `ma_device` (playback + capture) at **48 kHz, mono**, low-latency performance profile. `ar_engine_set_capture(engine, 0)` before start opens a **playback-only** device instead (`AR_PRESET_NONE`): no capture, no pitch frames, no mic permission. Listen & name uses it.
 
 - **Android input preset: `Unprocessed`**, falling back to `VoiceRecognition` where unprocessed is not supported. Both avoid echo cancellation and noise suppression, which damage a flute tone. Log which preset was actually used.
 - **iOS (later):** `AVAudioSession` category `playAndRecord`, mode `measurement` (disables voice processing), default-to-speaker.

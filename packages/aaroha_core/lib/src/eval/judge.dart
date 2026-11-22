@@ -221,3 +221,25 @@ List<DetectedNote> _mergeRepeats(List<DetectedNote> notes, List<Pitch> targets) 
   }
   return out;
 }
+
+/// Listen & name (docs/08 M2-B): judges tapped answers against the targets,
+/// position by position. Each answer is treated as an exactly played note, so
+/// the octave rule and hints work as in played attempts.
+AttemptResult judgeNamed(List<Pitch> targets, List<Pitch> answers, JudgeSettings settings) {
+  DetectedNote asPlayed(Pitch p) => DetectedNote(
+    pitch: p,
+    onset: 0,
+    end: 0,
+    cents: settings.tuning.centsOf(p),
+    deviation: 0,
+    stability: 0,
+  );
+  return AttemptResult([
+    for (var i = 0; i < targets.length; i++)
+      i < answers.length
+          ? judgeNote(targets[i], asPlayed(answers[i]), settings)
+          : JudgedNote(verdict: Verdict.missing, target: targets[i]),
+    for (var i = targets.length; i < answers.length; i++)
+      JudgedNote(verdict: Verdict.extra, played: asPlayed(answers[i])),
+  ], strictIntonation: settings.strictIntonation);
+}

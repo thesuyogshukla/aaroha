@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aaroha_core/aaroha_core.dart';
 
+import '../data/providers.dart';
 import '../widgets/sargam.dart';
+import '../widgets/swar_keypad.dart';
 import 'practice_controller.dart';
 import 'practice_settings.dart';
 import 'session_summary.dart';
@@ -81,9 +83,27 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                 children: [
                   const Spacer(),
                   if (round != null) _target(context, s),
+                  if (round != null && s.settings.naming && _targetVisible(s)) ...[
+                    const SizedBox(height: 12),
+                    _answerSlots(context, s, size: 28),
+                  ],
                   const SizedBox(height: 32),
                   _phase(context, s),
                   const Spacer(),
+                  if (round != null && s.settings.naming) ...[
+                    SwarKeypad(
+                      pitches: practicePitches(
+                        s.settings.swarSet,
+                        s.settings.range,
+                        low: s.flute.low,
+                        high: s.flute.high,
+                      ),
+                      script: s.settings.script,
+                      enabled: _canAnswer(s),
+                      onTap: controller.answer,
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                   _buttons(context, s, controller),
                 ],
               ),
@@ -117,13 +137,16 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     if (!_targetVisible(s)) {
       return Column(
         children: [
-          Wrap(
-            spacing: 16,
-            children: [
-              for (final _ in round.target)
-                Text('?', style: TextStyle(fontSize: 48, color: scheme.outline)),
-            ],
-          ),
+          if (s.settings.naming)
+            _answerSlots(context, s, size: 48)
+          else
+            Wrap(
+              spacing: 16,
+              children: [
+                for (final _ in round.target)
+                  Text('?', style: TextStyle(fontSize: 48, color: scheme.outline)),
+              ],
+            ),
           if (judged)
             TextButton(
               onPressed: () => setState(() => _revealed = true),
@@ -143,6 +166,47 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           ]
         : null;
     return SargamRow(round.target, script: s.settings.script, size: 48, colors: colors);
+  }
+
+  /// Listen & name: whether a tap is accepted now.
+  static bool _canAnswer(PracticeState s) {
+    final round = s.round;
+    if (round == null || round.passed || round.gaveUp) return false;
+    return s.phase == PracticePhase.calling ||
+        s.phase == PracticePhase.answering ||
+        s.phase == PracticePhase.verdict;
+  }
+
+  /// Listen & name: one slot per target note, filled with the tapped swars,
+  /// each marked right or wrong as it is tapped.
+  Widget _answerSlots(BuildContext context, PracticeState s, {required double size}) {
+    final round = s.round!;
+    final scheme = Theme.of(context).colorScheme;
+    final answers = s.answers;
+    final judged = judgeNamed(
+      round.target.sublist(0, answers.length.clamp(0, round.target.length)),
+      answers.take(round.target.length).toList(),
+      s.settings.judge(48000),
+    ).notes;
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: size * 0.5,
+      children: [
+        for (var i = 0; i < round.target.length; i++)
+          if (i < answers.length)
+            SwarGlyph(
+              answers[i],
+              script: s.settings.script,
+              size: size,
+              color: judged[i].passed ? scheme.primary : scheme.error,
+            )
+          else
+            Text(
+              '?',
+              style: TextStyle(fontSize: size, color: scheme.outline),
+            ),
+      ],
+    );
   }
 
   Widget _phase(BuildContext context, PracticeState s) {
@@ -167,6 +231,12 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             const SizedBox(height: 12),
             SizedBox(width: 200, child: LinearProgressIndicator(value: s.level)),
           ],
+        );
+      case PracticePhase.answering:
+        final n = s.round!.target.length;
+        return Text(
+          n == 1 ? 'Which swar?' : 'Tap the notes in order (${s.answers.length} of $n)',
+          style: theme.textTheme.titleLarge,
         );
       case PracticePhase.verdict:
         return _verdict(context, s);
@@ -295,13 +365,20 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: OutlinedButton(
-            style: OutlinedButton.styleFrom(padding: padding),
-            onPressed: s.phase == PracticePhase.verdict || s.phase == PracticePhase.paused
-                ? controller.retry
-                : null,
-            child: content(Icons.mic, 'Try again'),
-          ),
+          // Naming retries by tapping again, so this slot plays Sa instead.
+          child: s.settings.naming
+              ? OutlinedButton(
+                  style: OutlinedButton.styleFrom(padding: padding),
+                  onPressed: busy ? null : controller.hearSa,
+                  child: content(Icons.music_note, 'Hear Sa'),
+                )
+              : OutlinedButton(
+                  style: OutlinedButton.styleFrom(padding: padding),
+                  onPressed: s.phase == PracticePhase.verdict || s.phase == PracticePhase.paused
+                      ? controller.retry
+                      : null,
+                  child: content(Icons.mic, 'Try again'),
+                ),
         ),
         const SizedBox(width: 8),
         Expanded(

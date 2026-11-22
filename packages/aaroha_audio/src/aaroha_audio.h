@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 // Bumped whenever a struct layout or function signature changes.
-#define AR_ABI_VERSION 2
+#define AR_ABI_VERSION 3
 
 #define AR_MAX_SEQUENCE_NOTES 128
 
@@ -58,6 +58,7 @@ enum {
   AR_PRESET_UNPROCESSED = 0,
   AR_PRESET_VOICE_RECOGNITION = 1,
   AR_PRESET_DEFAULT = 2,
+  AR_PRESET_NONE = 3,  // playback only: the mic is not opened
 };
 
 enum {
@@ -86,6 +87,9 @@ AR_API void ar_tracker_default_config(ar_tracker_config* out);
 AR_API ar_engine* ar_engine_create(int32_t sample_rate);
 // Returns 0 on success, a negative miniaudio result code on failure.
 AR_API int32_t ar_engine_start(ar_engine* engine);
+// Whether the next start opens the mic (default on). Off gives a playback-
+// only device: no capture, no pitch frames, no mic permission needed.
+AR_API void ar_engine_set_capture(ar_engine* engine, int32_t on);
 AR_API void ar_engine_stop(ar_engine* engine);
 AR_API void ar_engine_destroy(ar_engine* engine);
 AR_API int64_t ar_engine_time(ar_engine* engine);

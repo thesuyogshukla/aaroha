@@ -148,6 +148,12 @@ class _Options extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        label('How you answer'),
+        segments(
+          [(AnswerBy.play, 'Play it on the flute'), (AnswerBy.name, 'Name it (no mic)')],
+          settings.answerBy,
+          (v) => save(settings.copyWith(answerBy: v)),
+        ),
         label('What the app plays'),
         segments(
           [for (final m in PracticeMode.values) (m, m.label)],

@@ -447,6 +447,7 @@ class _EngineInfoCard extends StatelessWidget {
       InputPreset.unprocessed => 'unprocessed',
       InputPreset.voiceRecognition => 'voice recognition',
       InputPreset.platformDefault => 'default (processed!)',
+      InputPreset.none => 'none (playback only)',
       null => '–',
     };
     return Card(

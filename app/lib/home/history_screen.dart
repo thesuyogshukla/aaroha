@@ -55,7 +55,8 @@ class HistoryScreen extends ConsumerWidget {
                   for (final r in rows)
                     ListTile(
                       title: Text(
-                        '${r.flute} · ${r.session.mode == 'single' ? 'single swar' : 'phrases'}',
+                        '${r.flute} · ${r.session.mode == 'single' ? 'single swar' : 'phrases'}'
+                        '${r.session.settingsJson.contains('"answerBy":"name"') ? ' · named' : ''}',
                       ),
                       subtitle: Text(_date(r.session.startedAt)),
                       trailing: Text(

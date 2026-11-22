@@ -60,15 +60,26 @@ class AudioService {
   int get sampleRate => _engine?.info.sampleRate ?? 48000;
   EngineInfo? get info => _engine?.info;
 
-  Future<bool> ensureStarted() async {
-    if (running) return true;
+  bool _capturing = true;
+
+  /// Whether the running engine has the mic open.
+  bool get capturing => running && _capturing;
+
+  /// Starts the engine. With [capture] false it runs playback only: the
+  /// drone and flute voice, no mic and no mic permission (Listen & name).
+  /// A running engine in the other mode is restarted.
+  Future<bool> ensureStarted({bool capture = true}) async {
+    if (running && _capturing == capture) return true;
+    if (running) stop();
     _setStatus(AudioStatus.starting);
-    if (!(await Permission.microphone.request()).isGranted) {
+    if (capture && !(await Permission.microphone.request()).isGranted) {
       _setStatus(AudioStatus.permissionDenied);
       return false;
     }
     try {
       final engine = _engine ??= AudioEngine.create();
+      engine.setCapture(capture);
+      _capturing = capture;
       engine.setTracker(_tracker);
       final d = _drone;
       if (d != null) {

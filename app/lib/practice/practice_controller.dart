@@ -15,7 +15,8 @@ import 'session_recorder.dart';
 
 /// The round loop from docs/04-architecture.md:
 /// calling → listening → verdict → (retry | replay | next) … → finished.
-enum PracticePhase { starting, calling, listening, verdict, paused, finished, error }
+/// `answering`: Listen & name, waiting for taps (instead of `listening`).
+enum PracticePhase { starting, calling, listening, answering, verdict, paused, finished, error }
 
 class RoundRecord {
   RoundRecord(this.number, this.target);
@@ -42,6 +43,7 @@ class PracticeState {
     this.level = 0,
     this.message,
     this.countdown,
+    this.answers = const [],
   });
 
   final PracticePhase phase;
@@ -56,21 +58,30 @@ class PracticeState {
   /// Seconds left before an automatic retry; null when none is running.
   final int? countdown;
 
+  /// Listen & name: the swars tapped so far in this attempt.
+  final List<Pitch> answers;
+
   RoundRecord? get round => rounds.isEmpty ? null : rounds.last;
   AttemptResult? get lastResult => round?.attempts.lastOrNull;
 
   /// [message] and [countdown] are not carried over: any other update clears
   /// them.
-  PracticeState copyWith({PracticePhase? phase, double? level, String? message, int? countdown}) =>
-      PracticeState(
-        phase: phase ?? this.phase,
-        flute: flute,
-        settings: settings,
-        rounds: rounds,
-        level: level ?? this.level,
-        message: message,
-        countdown: countdown,
-      );
+  PracticeState copyWith({
+    PracticePhase? phase,
+    double? level,
+    String? message,
+    int? countdown,
+    List<Pitch>? answers,
+  }) => PracticeState(
+    phase: phase ?? this.phase,
+    flute: flute,
+    settings: settings,
+    rounds: rounds,
+    level: level ?? this.level,
+    message: message,
+    countdown: countdown,
+    answers: answers ?? this.answers,
+  );
 }
 
 final practiceProvider = NotifierProvider<PracticeController, PracticeState?>(
@@ -81,6 +92,8 @@ class PracticeController extends Notifier<PracticeState?> {
   StreamSubscription<List<PitchFrame>>? _frames;
   Timer? _advance;
   Timer? _countdown;
+  Timer? _phaseTimer;
+  final _answers = <Pitch>[];
   late TargetGenerator _targets;
   int? _sessionId;
   SessionRecorder? _recorder;
@@ -124,7 +137,8 @@ class PracticeController extends Notifier<PracticeState?> {
     );
     _audio.configureFor(flute.saHz);
     _audio.setDrone(saHz: flute.saHz, volume: settings.droneVolume, on: settings.droneOn);
-    if (!await _audio.ensureStarted()) {
+    // Listen & name needs no mic: the engine runs playback only.
+    if (!await _audio.ensureStarted(capture: !settings.naming)) {
       state = state!.copyWith(
         phase: PracticePhase.error,
         message: 'The microphone is not available (${_audio.status.name}).',
@@ -145,7 +159,7 @@ class PracticeController extends Notifier<PracticeState?> {
             startedAt: DateTime.now(),
           ),
         );
-    if (settings.saveSessionAudio) {
+    if (settings.saveSessionAudio && !settings.naming) {
       _recorder = SessionRecorder(_audio);
       await _recorder!.start(flute.name, _sessionId!, {
         'sessionId': _sessionId,
@@ -170,12 +184,35 @@ class PracticeController extends Notifier<PracticeState?> {
     if (state == null) return;
     _stopTimers();
     if (!await _resume()) return;
+    if (state!.settings.naming) {
+      _answers.clear();
+      state = state!.copyWith(phase: PracticePhase.answering, answers: const []);
+      return;
+    }
     _listen(from: _audio.time + _frames100ms(1), seconds: 8);
     _recorder?.log('listen', {
       'round': state!.round!.number,
       'listenFrom': _listenFrom,
       'deadline': _deadline,
     });
+  }
+
+  /// Plays madhya Sa as a reference, without changing the round.
+  Future<void> hearSa() async {
+    final s = state;
+    if (s == null || !await _resume()) return;
+    final sr = _audio.sampleRate;
+    final call = scheduleCall(
+      Phrase(
+        notes: [Note(pitch: const Pitch(Swar.sa), start: Fraction.zero, duration: Fraction.one)],
+      ),
+      saHz: s.flute.saHz,
+      start: _audio.time + (0.1 * sr).round(),
+      sampleRate: sr,
+      matraSeconds: 1.2,
+      tuning: s.settings.tuning.tuning,
+    );
+    _audio.play(call.notes);
   }
 
   Future<void> next() async {
@@ -223,7 +260,7 @@ class PracticeController extends Notifier<PracticeState?> {
 
   Future<bool> _resume() async {
     if (_audio.running) return true;
-    final ok = await _audio.ensureStarted();
+    final ok = await _audio.ensureStarted(capture: !state!.settings.naming);
     if (!ok) {
       state = state!.copyWith(phase: PracticePhase.error, message: 'The microphone stopped.');
     } else {
@@ -288,7 +325,17 @@ class PracticeController extends Notifier<PracticeState?> {
       'deadline': _deadline,
       'loopbackMs': _audio.loopbackMs.round(),
     });
-    state = s.copyWith(phase: PracticePhase.calling);
+    _answers.clear();
+    state = s.copyWith(phase: PracticePhase.calling, answers: const []);
+    if (s.settings.naming) {
+      // No mic frames to clock the phases: switch when the call has played.
+      final wait = Duration(microseconds: ((call.end - _audio.time) * 1e6 / sr).round());
+      _phaseTimer = Timer(wait, () {
+        if (state?.phase == PracticePhase.calling) {
+          state = state!.copyWith(phase: PracticePhase.answering);
+        }
+      });
+    }
   }
 
   void _listen({required int from, required double seconds}) {
@@ -407,6 +454,35 @@ class PracticeController extends Notifier<PracticeState?> {
       ],
     });
 
+    await _conclude(result);
+  }
+
+  /// Listen & name: one tapped swar. Each tap is checked as it comes; once
+  /// the target's length is reached the attempt is judged. A tap after a
+  /// miss starts the next attempt.
+  Future<void> answer(Pitch pitch) async {
+    final s = state;
+    final round = s?.round;
+    if (s == null || round == null || round.passed || round.gaveUp) return;
+    const open = {PracticePhase.calling, PracticePhase.answering, PracticePhase.verdict};
+    if (!open.contains(s.phase)) return;
+    _stopTimers();
+    if (s.phase == PracticePhase.verdict) _answers.clear();
+    _answers.add(pitch);
+    if (_answers.length < round.target.length) {
+      state = s.copyWith(phase: PracticePhase.answering, answers: List.of(_answers));
+      return;
+    }
+    final result = judgeNamed(round.target, _answers, s.settings.judge(_audio.sampleRate));
+    round.attempts.add(result);
+    state = s.copyWith(phase: PracticePhase.verdict, answers: List.of(_answers));
+    await _conclude(result);
+  }
+
+  /// Stores a judged attempt and decides what comes next (docs/08 M2-A).
+  Future<void> _conclude(AttemptResult result) async {
+    final s = state!;
+    final round = s.round!;
     await _db
         .into(_db.attempts)
         .insert(
@@ -420,7 +496,9 @@ class PracticeController extends Notifier<PracticeState?> {
         );
 
     if (result.passed) {
-      if (s.settings.autoAdvance) _advance = Timer(const Duration(milliseconds: 1500), next);
+      // Naming is quick, so its rounds move on sooner.
+      final pause = Duration(milliseconds: s.settings.naming ? 1000 : 1500);
+      if (s.settings.autoAdvance) _advance = Timer(pause, next);
       return;
     }
     switch (afterMiss(round.misses, s.settings)) {
@@ -431,7 +509,13 @@ class PracticeController extends Notifier<PracticeState?> {
         // A little longer than after a pass, to take in the answer.
         if (s.settings.autoAdvance) _advance = Timer(const Duration(seconds: 4), next);
       case MissStep.autoRetry:
-        _startCountdown();
+        // Naming needs no hands-free countdown: a tap starts the next try.
+        // It can still replay the call first.
+        if (!s.settings.naming) {
+          _startCountdown();
+        } else if (s.settings.replayBeforeRetry) {
+          _advance = Timer(const Duration(milliseconds: 1200), replay);
+        }
       case MissStep.wait:
         break;
     }
@@ -470,6 +554,7 @@ class PracticeController extends Notifier<PracticeState?> {
     _advance?.cancel();
     _countdown?.cancel();
     _countdown = null;
+    _phaseTimer?.cancel();
   }
 
   void _cleanUp() {

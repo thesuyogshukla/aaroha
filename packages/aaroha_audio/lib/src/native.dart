@@ -4,7 +4,7 @@
 import 'dart:ffi';
 import 'dart:io';
 
-const arAbiVersion = 2;
+const arAbiVersion = 3;
 const arMaxSequenceNotes = 128;
 
 final class ArPitchFrame extends Struct {
@@ -149,7 +149,12 @@ class NativeBindings {
       stopPlayback = lib
           .lookupFunction<Void Function(Pointer<ArEngine>), void Function(Pointer<ArEngine>)>(
             'ar_stop_playback',
-          );
+          ),
+      setCapture = lib
+          .lookupFunction<
+            Void Function(Pointer<ArEngine>, Int32),
+            void Function(Pointer<ArEngine>, int)
+          >('ar_engine_set_capture');
 
   final int Function() abiVersion;
   final int Function() sizeofPitchFrame;
@@ -171,6 +176,7 @@ class NativeBindings {
   final int Function() sizeofNote;
   final int Function(Pointer<ArEngine>, Pointer<ArNote>, int) playSequence;
   final void Function(Pointer<ArEngine>) stopPlayback;
+  final void Function(Pointer<ArEngine>, int) setCapture;
 
   /// Throws if the loaded library doesn't match these bindings.
   void checkAbi() {

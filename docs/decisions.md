@@ -126,6 +126,10 @@ M2 is, in order: **A** hands-free practice (auto-retry countdown, replay-before-
 "Show the target" has three options, not the four in the D32 plan: *always*, *when the round ends*, *never*. "After a pass" and "after giving up" both meant the round had ended. A miss with "show: the answer" reveals the target too, matching the old "after attempt", and old saved settings carry over (shown → always, after attempt → when the round ends, hidden → never). Defaults keep today's behaviour: wait for the player, show the answer, replay before an automatic retry, give up after 3 misses. After a pass the next round starts in 1.5 s; after giving up, in 4 s, to take in the answer. A wrong swar within 250 c (a whole tone and a little) is "too" low or high; further is "much too".
 **Why:** simpler choices with the same reach, and the owner's current sessions behave exactly as before until they change a setting.
 
+### D34 — Listen & name as built (2026-11-22)
+Naming runs the engine **playback only** (new `ar_engine_set_capture`, ABI 3): the drone and the flute voice play, the mic is never opened and no permission is asked. Each tapped swar is judged as an exactly played note (`judgeNamed`), so hints, the octave rule, give-up and stats work unchanged. The keypad is live from the start of the call. After a miss, a tap starts the next try, with no countdown; the call replays first only with "retry by itself" + "replay before retrying". *Hear Sa* takes the *Try again* slot. Rounds advance 1 s after a pass (1.5 s when playing).
+**Why:** the point of the mode is many quick repetitions anywhere, so nothing should slow a tap down, and a countdown only helps when both hands are on a flute. A playback-only device keeps the "no mic" promise true at the OS level, not just in the UI.
+
 ## Open questions
 
 - **Tolerance defaults by level:** ±35 / ±25 / ±15 cents is a guess; tune after a week of use.

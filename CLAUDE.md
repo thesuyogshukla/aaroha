@@ -56,7 +56,7 @@ After changing anything in `packages/aaroha_audio/src/`, rebuild the host librar
 - `debug/` — M0 test tools: live pitch readout and fixture recording
 - `widgets/` — sargam rendering
 
-The mic is on only during calibration, practice and the test tools.
+The mic is on only during calibration, flute practice and the test tools. Listen & name runs the engine playback only (no mic).
 
 ## Conventions
 

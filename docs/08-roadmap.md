@@ -59,6 +59,8 @@ Acceptance: a 20-round session runs with both hands on the flute; hints never re
 - A "hear Sa" button replays the reference. The same hint, give-up and auto-advance settings as A apply.
 - No microphone, no recording: usable anywhere with headphones. It counts as a separate mode in history; answers feed the same confusion stats as flute practice (C).
 
+As built: the keypad is live from the start of the call; tapped swars fill the "?" slots and turn green or red as they are tapped. After a miss a tap simply starts the next try (no countdown: the hands are free); with "retry by itself" and "replay before retrying", the call replays first. *Hear Sa* replaces *Try again*. After a pass the next round starts in 1 s. The engine runs playback only, so the mic is never opened and no permission is asked. Naming sessions show as "named" in History.
+
 Acceptance: a 20-round naming session takes under 5 minutes; confusions show up in the same stats as flute sessions.
 
 ### C. Smart drilling

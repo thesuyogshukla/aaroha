@@ -6,7 +6,8 @@ import 'package:aaroha_core/aaroha_core.dart';
 import 'call.dart';
 import 'native.dart';
 
-enum InputPreset { unprocessed, voiceRecognition, platformDefault }
+/// `none`: a playback-only engine (see [AudioEngine.setCapture]).
+enum InputPreset { unprocessed, voiceRecognition, platformDefault, none }
 
 /// The tanpura's first string (docs/02-music-model.md).
 enum DroneFirstString { pa, ma, ni }
@@ -102,6 +103,10 @@ class AudioEngine {
 
   void stop() => _native.engineStop(_engine);
 
+  /// Whether the next [start] opens the mic. Off gives a playback-only
+  /// engine: drone and flute voice, no capture, no mic permission needed.
+  void setCapture(bool on) => _native.setCapture(_engine, on ? 1 : 0);
+
   void dispose() {
     if (_disposed) return;
     _disposed = true;
@@ -125,7 +130,7 @@ class AudioEngine {
     }
     return EngineInfo(
       sampleRate: i.sampleRate,
-      inputPreset: InputPreset.values[i.inputPreset.clamp(0, 2)],
+      inputPreset: InputPreset.values[i.inputPreset.clamp(0, 3)],
       running: i.running != 0,
       recording: i.recording != 0,
       captureOverruns: i.captureOverruns,
