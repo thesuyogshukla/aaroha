@@ -8,6 +8,7 @@ import 'package:aaroha_audio/aaroha_audio.dart';
 import 'package:aaroha_core/aaroha_core.dart';
 
 import '../audio/audio_service.dart';
+import '../data/content.dart';
 import '../data/database.dart';
 import '../data/history.dart';
 import '../data/providers.dart';
@@ -20,9 +21,12 @@ import 'session_recorder.dart';
 enum PracticePhase { starting, calling, listening, answering, verdict, paused, finished, error }
 
 class RoundRecord {
-  RoundRecord(this.number, this.target);
+  RoundRecord(this.number, this.target, [this.label]);
   final int number;
   final List<Pitch> target;
+
+  /// What the target is, in alankar and raga practice ("Aaroh", "Pakad").
+  final String? label;
   final attempts = <AttemptResult>[];
   int? id;
 
@@ -45,6 +49,8 @@ class PracticeState {
     this.message,
     this.countdown,
     this.answers = const [],
+    this.keypad = const [],
+    this.title,
   });
 
   final PracticePhase phase;
@@ -61,6 +67,12 @@ class PracticeState {
 
   /// Listen & name: the swars tapped so far in this attempt.
   final List<Pitch> answers;
+
+  /// Listen & name: the swars the keypad offers.
+  final List<Pitch> keypad;
+
+  /// What is being practised, in alankar and raga modes ("Yaman").
+  final String? title;
 
   RoundRecord? get round => rounds.isEmpty ? null : rounds.last;
   AttemptResult? get lastResult => round?.attempts.lastOrNull;
@@ -82,8 +94,16 @@ class PracticeState {
     message: message,
     countdown: countdown,
     answers: answers ?? this.answers,
+    keypad: keypad,
+    title: title,
   );
 }
+
+/// Where a session's targets come from, and what goes with them.
+typedef PracticeMaterial = ({Raga? raga, int? rounds, List<Pitch> keypad, String? title});
+
+int _byPitch(Pitch a, Pitch b) =>
+    (a.octave * 12 + a.swar.semitone).compareTo(b.octave * 12 + b.swar.semitone);
 
 final practiceProvider = NotifierProvider<PracticeController, PracticeState?>(
   PracticeController.new,
@@ -95,7 +115,7 @@ class PracticeController extends Notifier<PracticeState?> {
   Timer? _countdown;
   Timer? _phaseTimer;
   final _answers = <Pitch>[];
-  late TargetGenerator _targets;
+  late Drill Function() _nextDrill;
   PracticeHistory? _history;
   int? _sessionId;
   SessionRecorder? _recorder;
@@ -135,14 +155,36 @@ class PracticeController extends Notifier<PracticeState?> {
       rounds: [],
     );
     // Smart drilling learns from every earlier first try (docs/05 §8).
-    final history = _history = settings.adaptive ? await loadPracticeHistory(_db) : null;
-    _targets = TargetGenerator(
-      practicePitches(settings.swarSet, settings.range, low: flute.low, high: flute.high),
-      weightOf: history?.weight,
-      pairs: history == null ? null : () => history.confusedPairs(),
+    _history = settings.adaptive ? await loadPracticeHistory(_db) : null;
+    final PracticeMaterial m;
+    try {
+      m = await _material(flute, settings);
+    } on Object catch (e) {
+      state = state!.copyWith(phase: PracticePhase.error, message: '$e');
+      return;
+    }
+    final raga = m.raga;
+    // An alankar is one walk up and down: it sets its own number of rounds.
+    if (m.rounds != null) settings = settings.copyWith(rounds: m.rounds);
+    state = PracticeState(
+      phase: PracticePhase.starting,
+      flute: flute,
+      settings: settings,
+      rounds: [],
+      keypad: m.keypad,
+      title: m.title,
     );
     _audio.configureFor(flute.saHz);
-    _audio.setDrone(saHz: flute.saHz, volume: settings.droneVolume, on: settings.droneOn);
+    _audio.setDrone(
+      saHz: flute.saHz,
+      firstString: switch (raga?.drone) {
+        Swar.ma => DroneFirstString.ma,
+        Swar.ni => DroneFirstString.ni,
+        _ => DroneFirstString.pa,
+      },
+      volume: settings.droneVolume,
+      on: settings.droneOn,
+    );
     // Listen & name needs no mic: the engine runs playback only.
     if (!await _audio.ensureStarted(capture: !settings.naming)) {
       state = state!.copyWith(
@@ -175,6 +217,65 @@ class PracticeController extends Notifier<PracticeState?> {
       });
     }
     await _nextRound();
+  }
+
+  /// Sets up where targets come from (docs/06, content for each mode).
+  Future<PracticeMaterial> _material(Flute flute, PracticeSettings settings) async {
+    final tuning = settings.tuning.tuning;
+    switch (settings.mode) {
+      case PracticeMode.single || PracticeMode.phrase:
+        final history = _history;
+        final pitches = practicePitches(
+          settings.swarSet,
+          settings.range,
+          low: flute.low,
+          high: flute.high,
+        );
+        final targets = TargetGenerator(
+          pitches,
+          weightOf: history?.weight,
+          pairs: history == null ? null : () => history.confusedPairs(),
+        );
+        final single = settings.mode == PracticeMode.single;
+        _nextDrill = () => (label: '', pitches: single ? targets.single() : targets.phrase());
+        return (raga: null, rounds: null, keypad: pitches, title: null);
+      case PracticeMode.alankar:
+        final content = await ref.read(contentProvider.future);
+        final alankar = content.alankar(settings.alankarId) ?? content.alankars.first;
+        final raga = settings.ragaInUse == null ? null : content.raga(settings.ragaInUse!);
+        final set = SwarSet.values.where((s) => s.name == settings.alankarScale).firstOrNull;
+        List<Pitch> degrees(Iterable<Swar> swars) =>
+            scaleDegrees(swars, settings.range, low: flute.low, high: flute.high, tuning: tuning);
+        final up = degrees(raga?.aarohSwars ?? (set ?? SwarSet.shuddha).swars);
+        final down = degrees(raga?.avarohSwars ?? (set ?? SwarSet.shuddha).swars);
+        final rounds = alankarRounds(alankar, up, down);
+        if (rounds.isEmpty) throw StateError('This alankar does not fit the flute\'s range.');
+        var i = 0;
+        _nextDrill = () => rounds[i++ % rounds.length];
+        return (
+          raga: raga,
+          rounds: rounds.length,
+          keypad: {...up, ...down}.toList()..sort(_byPitch),
+          title: '${alankar.name} · ${raga?.name ?? (set ?? SwarSet.shuddha).label}',
+        );
+      case PracticeMode.raga:
+        final content = await ref.read(contentProvider.future);
+        final raga = content.raga(settings.ragaId) ?? content.ragas.first;
+        final drill = RagaDrill(raga, low: flute.low, high: flute.high, tuning: tuning);
+        _nextDrill = drill.next;
+        return (
+          raga: raga,
+          rounds: null,
+          keypad: scaleDegrees(
+            raga.swars,
+            SaptakRange.all,
+            low: flute.low,
+            high: flute.high,
+            tuning: tuning,
+          ),
+          title: raga.name,
+        );
+    }
   }
 
   /// Plays the call again, then listens.
@@ -277,8 +378,13 @@ class PracticeController extends Notifier<PracticeState?> {
 
   Future<void> _nextRound() async {
     final s = state!;
-    final target = s.settings.mode == PracticeMode.single ? _targets.single() : _targets.phrase();
-    final round = RoundRecord(s.rounds.length + 1, target);
+    final drill = _nextDrill();
+    final target = drill.pitches;
+    final round = RoundRecord(
+      s.rounds.length + 1,
+      target,
+      drill.label.isEmpty ? null : drill.label,
+    );
     s.rounds.add(round);
     round.id = await _db
         .into(_db.rounds)
@@ -411,7 +517,7 @@ class PracticeController extends Notifier<PracticeState?> {
       _heard,
       saHz: state!.flute.saHz,
       tuning: state!.settings.tuning.tuning,
-      config: SegmenterConfig(sampleRate: sr),
+      config: _segmenterConfig(state!, sr),
     );
     final target = state!.round!.target;
     if (target.length == 1) {
@@ -425,6 +531,13 @@ class PracticeController extends Notifier<PracticeState?> {
 
   static const _none = PitchFrame(time: -1, hz: 0, confidence: 0, rms: 0);
 
+  /// Notes more than a semitone below the flute's lowest note can't have
+  /// been played: they are the drone, read at the tracker's floor (D37).
+  static SegmenterConfig _segmenterConfig(PracticeState s, int sampleRate) => SegmenterConfig(
+    sampleRate: sampleRate,
+    floorCents: s.settings.tuning.tuning.centsOf(s.flute.low) - 100,
+  );
+
   Future<void> _judge() async {
     final s = state!;
     final round = s.round!;
@@ -433,7 +546,7 @@ class PracticeController extends Notifier<PracticeState?> {
       _heard,
       saHz: s.flute.saHz,
       tuning: s.settings.tuning.tuning,
-      config: SegmenterConfig(sampleRate: sr),
+      config: _segmenterConfig(s, sr),
     );
     final judge = s.settings.judge(sr);
     final result = round.target.length == 1

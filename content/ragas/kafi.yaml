@@ -1,0 +1,23 @@
+id: kafi
+name: Kafi
+name_dev: काफी
+thaat: kafi
+swars: [S, R, g, m, P, D, n]
+aaroh: "S R g m P D n S'"
+avaroh: "S' n D P m g R S"
+pakad: ["R g m P , m g R , S"]
+vadi: P
+samvadi: S
+nyas: [P, S, R]
+drone: P
+time: "second quarter of the night"
+chalan:
+  - "S R g R"
+  - "R g m P"
+  - "m P D n D P"
+  - "D n S'"
+  - "S' n D P"
+  - "P m g R S"
+notes: "Draft for owner review. Bhatkhande gives the pakad as S S R R g g m m P; written here without the repeated notes, which the app does not yet judge reliably."
+source: traditional
+license: public-domain

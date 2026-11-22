@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aaroha_core/aaroha_core.dart';
 
+import '../data/content.dart';
 import '../data/database.dart';
 import '../data/providers.dart';
 import '../debug/debug_screen.dart';
@@ -62,7 +63,11 @@ class HomeScreen extends ConsumerWidget {
                 child: FilledButton.icon(
                   style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(56)),
                   icon: const Icon(Icons.play_arrow),
-                  label: Text('Start · ${settings.rounds} rounds'),
+                  label: Text(
+                    settings.mode == PracticeMode.alankar
+                        ? 'Start · up and down'
+                        : 'Start · ${settings.rounds} rounds',
+                  ),
                   onPressed: () {
                     ref.read(practiceProvider.notifier).start(flute, settings);
                     open(const PracticeScreen());
@@ -137,6 +142,15 @@ class _Options extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     void save(PracticeSettings s) => ref.read(practiceSettingsProvider.notifier).save(s);
     final theme = Theme.of(context);
+    final content = ref.watch(contentProvider).value;
+
+    Widget dropdown(List<(String, String)> options, String selected, void Function(String) on) =>
+        DropdownButton<String>(
+          isExpanded: true,
+          value: options.any((o) => o.$1 == selected) ? selected : options.first.$1,
+          items: [for (final o in options) DropdownMenuItem(value: o.$1, child: Text(o.$2))],
+          onChanged: (v) => v == null ? null : on(v),
+        );
 
     Widget label(String text) => Padding(
       padding: const EdgeInsets.only(top: 16, bottom: 6),
@@ -166,22 +180,50 @@ class _Options extends ConsumerWidget {
           settings.mode,
           (m) => save(settings.copyWith(mode: m)),
         ),
-        label('Swars'),
-        segments(
-          [(SwarSet.saToPa, 'S–P'), (SwarSet.shuddha, 'Shuddha'), (SwarSet.all, '+ komal/tivra')],
-          settings.swarSet,
-          (v) => save(settings.copyWith(swarSet: v)),
-        ),
-        label('Octaves'),
-        segments(
-          [
-            (SaptakRange.madhya, 'Madhya'),
-            (SaptakRange.withMandra, '+ mandra'),
-            (SaptakRange.all, 'All three'),
-          ],
-          settings.range,
-          (v) => save(settings.copyWith(range: v)),
-        ),
+        if (settings.mode == PracticeMode.alankar && content != null) ...[
+          label('Alankar'),
+          dropdown(
+            [for (final a in content.alankars) (a.id, a.name)],
+            settings.alankarId,
+            (v) => save(settings.copyWith(alankarId: v)),
+          ),
+          label('Scale'),
+          dropdown(
+            [
+              for (final s in SwarSet.values) (s.name, s.label),
+              for (final r in content.ragas) (r.id, 'Raga ${r.name}'),
+            ],
+            settings.alankarScale,
+            (v) => save(settings.copyWith(alankarScale: v)),
+          ),
+        ],
+        if (settings.mode == PracticeMode.raga && content != null) ...[
+          label('Raga'),
+          dropdown(
+            [for (final r in content.ragas) (r.id, r.name)],
+            settings.ragaId,
+            (v) => save(settings.copyWith(ragaId: v)),
+          ),
+        ],
+        if (settings.mode == PracticeMode.single || settings.mode == PracticeMode.phrase) ...[
+          label('Swars'),
+          segments(
+            [(SwarSet.saToPa, 'S–P'), (SwarSet.shuddha, 'Shuddha'), (SwarSet.all, '+ komal/tivra')],
+            settings.swarSet,
+            (v) => save(settings.copyWith(swarSet: v)),
+          ),
+        ],
+        if (settings.mode != PracticeMode.raga) label('Octaves'),
+        if (settings.mode != PracticeMode.raga)
+          segments(
+            [
+              (SaptakRange.madhya, 'Madhya'),
+              (SaptakRange.withMandra, '+ mandra'),
+              (SaptakRange.all, 'All three'),
+            ],
+            settings.range,
+            (v) => save(settings.copyWith(range: v)),
+          ),
         label('Show the target'),
         segments(
           [
@@ -229,12 +271,13 @@ class _Options extends ConsumerWidget {
           settings.toleranceCents,
           (v) => save(settings.copyWith(toleranceCents: v)),
         ),
-        label('Rounds'),
-        segments(
-          [(10, '10'), (20, '20'), (30, '30')],
-          settings.rounds,
-          (v) => save(settings.copyWith(rounds: v)),
-        ),
+        if (settings.mode != PracticeMode.alankar) label('Rounds'),
+        if (settings.mode != PracticeMode.alankar)
+          segments(
+            [(10, '10'), (20, '20'), (30, '30')],
+            settings.rounds,
+            (v) => save(settings.copyWith(rounds: v)),
+          ),
         label('Script'),
         segments(
           [for (final s in Script.values) (s, s.label)],

@@ -49,7 +49,7 @@ After changing anything in `packages/aaroha_audio/src/`, rebuild the host librar
 ## App structure (`app/lib`)
 
 - `audio/` — `AudioService` (the one native engine, shared by every screen) and `SaCalibrator`
-- `data/` — drift database (flutes, sessions, rounds, attempts, settings) and Riverpod providers
+- `data/` — drift database (flutes, sessions, rounds, attempts, settings), Riverpod providers, and the bundled content loader (`content.dart`; `app/content` is a symlink to the repo's `content/`)
 - `home/` — home screen (flute, practice options, Start) and history
 - `flutes/` — flute profiles and the calibration sheet
 - `practice/` — practice settings, the round loop (`PracticeController`), practice screen, session summary

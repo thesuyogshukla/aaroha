@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aaroha_core/aaroha_core.dart';
 
-import '../data/providers.dart';
 import '../widgets/sargam.dart';
 import '../widgets/swar_keypad.dart';
 import 'practice_controller.dart';
@@ -82,6 +81,14 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
               child: Column(
                 children: [
                   const Spacer(),
+                  if (round != null && (s.title != null || round.label != null))
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        [?s.title, ?round.label].join(' · '),
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
                   if (round != null) _target(context, s),
                   if (round != null && s.settings.naming && _targetVisible(s)) ...[
                     const SizedBox(height: 12),
@@ -92,12 +99,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                   const Spacer(),
                   if (round != null && s.settings.naming) ...[
                     SwarKeypad(
-                      pitches: practicePitches(
-                        s.settings.swarSet,
-                        s.settings.range,
-                        low: s.flute.low,
-                        high: s.flute.high,
-                      ),
+                      pitches: s.keypad,
                       script: s.settings.script,
                       enabled: _canAnswer(s),
                       onTap: controller.answer,
@@ -138,13 +140,19 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       return Column(
         children: [
           if (s.settings.naming)
-            _answerSlots(context, s, size: 48)
+            _answerSlots(context, s, size: round.target.length > 4 ? 36 : 48)
           else
             Wrap(
               spacing: 16,
               children: [
                 for (final _ in round.target)
-                  Text('?', style: TextStyle(fontSize: 48, color: scheme.outline)),
+                  Text(
+                    '?',
+                    style: TextStyle(
+                      fontSize: round.target.length > 4 ? 36 : 48,
+                      color: scheme.outline,
+                    ),
+                  ),
               ],
             ),
           if (judged)
@@ -165,7 +173,12 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                   : scheme.error,
           ]
         : null;
-    return SargamRow(round.target, script: s.settings.script, size: 48, colors: colors);
+    return SargamRow(
+      round.target,
+      script: s.settings.script,
+      size: round.target.length > 4 ? 36 : 48,
+      colors: colors,
+    );
   }
 
   /// Listen & name: whether a tap is accepted now.

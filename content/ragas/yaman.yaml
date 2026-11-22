@@ -1,0 +1,22 @@
+id: yaman
+name: Yaman
+name_dev: यमन
+thaat: kalyan
+swars: [S, R, G, M, P, D, N]   # M = tivra Ma
+aaroh: ".N R G M D N S'"
+avaroh: "S' N D P M G R S"
+pakad: [".N R G R , S , P M G R , S"]
+vadi: G
+samvadi: N
+nyas: [G, P, N, R]
+drone: P
+time: "first quarter of the night"
+chalan:
+  - ".N R G"
+  - "G M D N"
+  - "M D N S'"
+  - "N D P M G R S"
+  - ".N R S"
+notes: "Draft for owner review. Aaroh from mandra Ni, skipping Sa and Pa (the usual Yaman approach)."
+source: traditional
+license: public-domain

@@ -16,6 +16,7 @@ bool replaySession(NativeCore core, String logPath) {
       if (line.trim().isNotEmpty) jsonDecode(line) as Map<String, dynamic>,
   ];
   final header = events.firstWhere((e) => e['event'] == 'recording');
+  const lowestNote = Pitch(Swar.pa, -1);
   final wav = readWav(logPath.replaceAll(RegExp(r'\.jsonl$'), '.wav'));
   final sr = wav.sampleRate;
   final recordStart = header['engineFrame'] as int;
@@ -63,7 +64,9 @@ bool replaySession(NativeCore core, String logPath) {
       heard,
       saHz: saHz,
       tuning: tuning,
-      config: SegmenterConfig(sampleRate: sr),
+      // As the app: a semitone below the flute's lowest note, mandra Pa on
+      // every medium flute (the log does not record the range).
+      config: SegmenterConfig(sampleRate: sr, floorCents: tuning.centsOf(lowestNote) - 100),
     );
     final target = parsePhrase(e['target'] as String).pitches;
     final host = target.length == 1

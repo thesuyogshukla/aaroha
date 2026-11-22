@@ -1,0 +1,22 @@
+id: bhairav
+name: Bhairav
+name_dev: भैरव
+thaat: bhairav
+swars: [S, r, G, m, P, d, N]
+aaroh: "S r G m P d N S'"
+avaroh: "S' N d P m G r S"
+pakad: ["S G m P d P , G m r S"]
+vadi: d
+samvadi: r
+nyas: [d, r, m, P]
+drone: P
+time: "dawn"
+chalan:
+  - "G m r S"
+  - "G m d P"
+  - "m d N S'"
+  - "S' N d P"
+  - "P d P m G m r S"
+notes: "Draft for owner review. Komal Re and komal Dha are sung with a slow andolan in performance; the app plays them steady."
+source: traditional
+license: public-domain

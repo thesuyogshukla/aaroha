@@ -74,6 +74,8 @@ As built: a *Your ear* screen (the chart icon on Home) shows right first time pe
 - **Raga mode**: aaroh, avaroh, pakad and chalan phrases for 8 starter ragas: Bhupali, Yaman, Bilawal, Kafi, Bhairav, Durga, Khamaj, Des. Raga files live in `content/`, reviewed by the owner, with the drone's first string set per raga.
 - Longer phrases (5–8 notes): revisit the call's pace and the end-of-attempt timings (D27) with real sessions.
 
+As built: *What the app plays* gains **Alankar** (with an alankar and a scale picker: a swar set or any raga) and **Raga** (a raga picker). A line above the target names what is practised ("Yaman · Pakad"); targets longer than 4 notes are drawn smaller; in Listen & name, the keypad offers the session's own swars. History names alankar and raga sessions. The 8 raga files are drafts awaiting the owner's review (each file's `notes` says what to check). See D36.
+
 ### E. Pitch trace on the verdict
 - After an attempt, the player's pitch curve is drawn against the target notes, showing *how* a note was off: scooped attack, sagging tail, wavering, a crack.
 - Never shown live while playing: that would turn ear training into reading a tuner.

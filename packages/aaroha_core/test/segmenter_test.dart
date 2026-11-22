@@ -203,6 +203,23 @@ void main() {
     expect(asciiOf(segmentNotes(b.frames, saHz: sa)), ['N', 'G']);
   });
 
+  test('a note below the flute\'s range is dropped', () {
+    // Session 28: after G, the drone's low string carried on ~22 dB down and
+    // the tracker reported it at its search floor (-700 c), as mandra Ma.
+    final b = FrameBuilder()
+      ..note(1200, 600)
+      ..note(400, 600)
+      ..note(null, 200)
+      ..note(-672, 200, rms: 0.006, confidence: 0.92);
+    expect(asciiOf(segmentNotes(b.frames, saHz: sa)), ["S'", 'G', '.m'], reason: 'no floor');
+    const floor = SegmenterConfig(floorCents: -600); // a semitone below mandra Pa
+    expect(asciiOf(segmentNotes(b.frames, saHz: sa, config: floor)), ["S'", 'G']);
+    final low = FrameBuilder()..note(-500, 600);
+    expect(asciiOf(segmentNotes(low.frames, saHz: sa, config: floor)), [
+      '.P',
+    ], reason: 'mandra Pa stays');
+  });
+
   test('a faint but clear note stays', () {
     final b = FrameBuilder()
       ..note(1100, 600)

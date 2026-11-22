@@ -1,0 +1,22 @@
+id: des
+name: Des
+name_dev: देस
+thaat: khamaj
+swars: [S, R, G, m, P, D, n, N]
+aaroh: "S R m P N S'"
+avaroh: "S' n D P m G R , G .N S"
+pakad: ["R m P N S' , n D P , m G R G .N S"]
+vadi: R
+samvadi: P
+nyas: [R, P, S]
+drone: P
+time: "second quarter of the night"
+chalan:
+  - "R m P N S'"
+  - "S' n D P"
+  - "P D m G R"
+  - "R G .N S"
+  - "m P N S' R'"
+notes: "Draft for owner review. Aaroh skips Ga and Dha with shuddha Ni; avaroh uses komal Ni and returns through R G .N S."
+source: traditional
+license: public-domain

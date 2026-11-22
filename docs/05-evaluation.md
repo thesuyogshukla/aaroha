@@ -21,6 +21,8 @@ A **note** is a run of voiced frames on the same quantised swar lasting at least
 
 **Faint, unclear notes** are breaths, not notes: in an attempt with more than one note, a note whose median level is more than ~16.5 dB below the attempt's typical note *and* whose median confidence is under 0.9 is dropped. On such a sound the tracker can lock onto half the pitch (decisions.md D29). A faint but clear note stays, and a single note is never compared with itself.
 
+**Notes below the flute** are dropped: anything more than a semitone below the flute's lowest note (mandra Pa on a medium flute) can't have been played. When the flute stops, the drone's low strings can carry on below the tracker's search floor, and the tracker reports them at that floor, as a mandra Ma (decisions.md D37).
+
 **Octave flips** under **200 ms** on the same swar as a touching note, in another octave and with no re-articulation between them, become part of that note (its cracked attack or a release slipping down). The following note is preferred. Longer flips, like a 320 ms overblow into taar Ga, stay as their own note and get judged (decisions.md D22).
 
 For each note:

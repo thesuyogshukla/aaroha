@@ -30,8 +30,8 @@ Traditionally that someone is the guru. Aaroha does the repetitive part of that 
 |---|---|---|
 | **Single swar** | One note from a chosen set | v0.1 |
 | **Short phrase** | 2–4 notes, equal length, pitch judged only | v0.1 |
-| **Alankar** | Classic patterns (paltas) generated over a chosen scale | v0.2 |
-| **Raga** | Aaroh, avaroh, pakad and chalan phrases of a raga | v0.2 (fixed phrases), v0.4 (generated) |
+| **Alankar** | Classic patterns (paltas) generated over a chosen scale: shuddha, a swar set, or a raga (aaroh up, avaroh down). One walk up and down, a few notes per round | v0.2 (M2-D) |
+| **Raga** | Aaroh, avaroh, pakad and chalan phrases of a raga, the drone tuned for it | v0.2 (fixed phrases, M2-D), v0.4 (generated) |
 | **Rhythm** | Phrases with different note lengths, in a taal, over metronome or theka | v0.3 |
 | **Composition** | Lines of a bandish/gat or a user-entered tune | v0.4 |
 | **Listen & name** | One note or a short phrase; you tap the swar names instead of playing. Ear only: no flute, no mic, usable anywhere with headphones | v0.2 (M2-B) |

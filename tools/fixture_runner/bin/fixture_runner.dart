@@ -308,10 +308,11 @@ bool check(NativeCore core, String dir) {
       highpassHz: highpass ? highpassFor(sa) : 0,
       minHz: highpass ? minHzFor(sa) : null,
     );
+    // As the app: nothing more than a semitone below mandra Pa (D37).
     final notes = segmentNotes(
       frames,
       saHz: sa,
-      config: SegmenterConfig(sampleRate: wav.sampleRate),
+      config: SegmenterConfig(sampleRate: wav.sampleRate, floorCents: -600),
     );
     // A long note that splits in two is not a mismatch unless the take is
     // about repeated notes (docs/05 phrase judging merges them the same way).

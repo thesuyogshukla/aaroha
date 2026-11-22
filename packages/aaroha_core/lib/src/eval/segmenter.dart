@@ -30,6 +30,7 @@ class SegmenterConfig {
     this.quietRatio = 0.4,
     this.gapMs = 40,
     this.loudGapMs = 150,
+    this.floorCents,
   });
 
   final int sampleRate;
@@ -62,6 +63,13 @@ class SegmenterConfig {
   /// the pitch (decisions.md D29). Faint but clear notes stay.
   final double faintNoteRatio;
   final double faintNoteConfidence;
+
+  /// Notes lower than this (cents from Sa) are dropped: below the flute's
+  /// lowest note, so not played. Set it a semitone under the flute's range.
+  /// When the flute stops, the drone's low strings can carry on below the
+  /// tracker's search floor, and the tracker reports them at that floor
+  /// (decisions.md D37). Null: no floor.
+  final double? floorCents;
   final double attackMs;
   final double releaseMs;
 
@@ -309,7 +317,13 @@ List<DetectedNote> segmentNotes(
     }
   }
 
-  return [for (final run in kept) _toNote(run, frames, cents, tuning, config)];
+  final floor = config.floorCents;
+  return [
+    for (final run in kept)
+      if (_toNote(run, frames, cents, tuning, config) case final n
+          when floor == null || n.cents >= floor)
+        n,
+  ];
 }
 
 List<double?> _cleanCents(List<PitchFrame> frames, double saHz, SegmenterConfig config) {

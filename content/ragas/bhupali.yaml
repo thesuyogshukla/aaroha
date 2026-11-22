@@ -1,0 +1,22 @@
+id: bhupali
+name: Bhupali
+name_dev: भूपाली
+thaat: kalyan
+swars: [S, R, G, P, D]
+aaroh: "S R G P D S'"
+avaroh: "S' D P G R S"
+pakad: ["G R S .D , S R G , P G , D P G R S"]
+vadi: G
+samvadi: D
+nyas: [G, P, S]
+drone: P
+time: "first quarter of the night"
+chalan:
+  - ".D S R G"
+  - "G P D S'"
+  - "S' D P G"
+  - "P G R S"
+  - "G P D P G R S"
+notes: "Draft for owner review. Common Bhatkhande-style version: pentatonic, no Ma or Ni."
+source: traditional
+license: public-domain

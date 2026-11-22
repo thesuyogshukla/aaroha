@@ -35,7 +35,9 @@ Wav readWav(String path) {
     } else if (id == 'data') {
       if (format == null) throw FormatException('data before fmt', path);
       final stride = channels! * bits! ~/ 8;
-      final available = (bytes.length - body).clamp(0, size);
+      // A recording cut off before its header was finished (the app was
+      // closed mid-session) says 0 bytes: take the rest of the file.
+      final available = size == 0 ? bytes.length - body : (bytes.length - body).clamp(0, size);
       final frames = available ~/ stride;
       final out = Float32List(frames);
       for (var i = 0; i < frames; i++) {

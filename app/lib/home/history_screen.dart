@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/database.dart';
 import '../data/providers.dart';
+import '../practice/practice_settings.dart';
 import '../practice/session_summary.dart';
 
 class _SessionRow {
@@ -54,10 +55,7 @@ class HistoryScreen extends ConsumerWidget {
                 children: [
                   for (final r in rows)
                     ListTile(
-                      title: Text(
-                        '${r.flute} · ${r.session.mode == 'single' ? 'single swar' : 'phrases'}'
-                        '${r.session.settingsJson.contains('"answerBy":"name"') ? ' · named' : ''}',
-                      ),
+                      title: Text('${r.flute} · ${sessionLabel(r.session.settingsJson)}'),
                       subtitle: Text(_date(r.session.startedAt)),
                       trailing: Text(
                         '${(100 * r.firstTry / r.rounds).round()}% · ${r.rounds} '

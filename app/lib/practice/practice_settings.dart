@@ -1,8 +1,12 @@
+import 'dart:convert';
+
 import 'package:aaroha_core/aaroha_core.dart';
 
 enum PracticeMode {
   single('Single swar'),
-  phrase('Short phrase');
+  phrase('Short phrase'),
+  alankar('Alankar'),
+  raga('Raga');
 
   const PracticeMode(this.label);
   final String label;
@@ -89,6 +93,9 @@ class PracticeSettings {
     this.giveUpAfter = 3,
     this.missReveal = MissReveal.answer,
     this.adaptive = true,
+    this.alankarId = 'alankar-1',
+    this.alankarScale = 'shuddha',
+    this.ragaId = 'bhupali',
   });
 
   final PracticeMode mode;
@@ -129,6 +136,21 @@ class PracticeSettings {
   /// for pairs you confuse (docs/05 §8).
   final bool adaptive;
 
+  /// Alankar mode: which pattern, on which scale: a [SwarSet] name or a raga
+  /// id (the raga's aaroh going up, its avaroh coming down).
+  final String alankarId;
+  final String alankarScale;
+
+  /// Raga mode: which raga's phrases.
+  final String ragaId;
+
+  /// The raga whose drone and scale this session uses, if any.
+  String? get ragaInUse => switch (mode) {
+    PracticeMode.raga => ragaId,
+    PracticeMode.alankar when !SwarSet.values.any((s) => s.name == alankarScale) => alankarScale,
+    _ => null,
+  };
+
   JudgeSettings judge(int sampleRate) => JudgeSettings(
     toleranceCents: toleranceCents,
     octaveMustMatch: octaveMustMatch,
@@ -158,6 +180,9 @@ class PracticeSettings {
     int? giveUpAfter,
     MissReveal? missReveal,
     bool? adaptive,
+    String? alankarId,
+    String? alankarScale,
+    String? ragaId,
   }) => PracticeSettings(
     mode: mode ?? this.mode,
     answerBy: answerBy ?? this.answerBy,
@@ -179,6 +204,9 @@ class PracticeSettings {
     giveUpAfter: giveUpAfter ?? this.giveUpAfter,
     missReveal: missReveal ?? this.missReveal,
     adaptive: adaptive ?? this.adaptive,
+    alankarId: alankarId ?? this.alankarId,
+    alankarScale: alankarScale ?? this.alankarScale,
+    ragaId: ragaId ?? this.ragaId,
   );
 
   Map<String, dynamic> toJson() => {
@@ -202,6 +230,9 @@ class PracticeSettings {
     'giveUpAfter': giveUpAfter,
     'missReveal': missReveal.name,
     'adaptive': adaptive,
+    'alankarId': alankarId,
+    'alankarScale': alankarScale,
+    'ragaId': ragaId,
   };
 
   factory PracticeSettings.fromJson(Map<String, dynamic> j) {
@@ -236,6 +267,9 @@ class PracticeSettings {
       giveUpAfter: j['giveUpAfter'] as int? ?? d.giveUpAfter,
       missReveal: byName(MissReveal.values, j['missReveal'], d.missReveal),
       adaptive: j['adaptive'] as bool? ?? d.adaptive,
+      alankarId: j['alankarId'] as String? ?? d.alankarId,
+      alankarScale: j['alankarScale'] as String? ?? d.alankarScale,
+      ragaId: j['ragaId'] as String? ?? d.ragaId,
     );
   }
 }
@@ -247,4 +281,23 @@ enum MissStep { wait, autoRetry, giveUp }
 MissStep afterMiss(int misses, PracticeSettings settings) {
   if (settings.giveUpAfter > 0 && misses >= settings.giveUpAfter) return MissStep.giveUp;
   return settings.missAction == MissAction.autoRetry ? MissStep.autoRetry : MissStep.wait;
+}
+
+/// A session's one-line description for History, from its stored settings.
+String sessionLabel(String settingsJson) {
+  final Map<String, dynamic> j;
+  try {
+    j = jsonDecode(settingsJson) as Map<String, dynamic>;
+  } on FormatException {
+    return 'practice';
+  }
+  final s = PracticeSettings.fromJson(j);
+  String title(String id) => id.isEmpty ? id : id[0].toUpperCase() + id.substring(1);
+  final what = switch (s.mode) {
+    PracticeMode.single => 'single swar',
+    PracticeMode.phrase => 'phrases',
+    PracticeMode.alankar => s.ragaInUse == null ? 'alankar' : 'alankar in ${title(s.ragaInUse!)}',
+    PracticeMode.raga => 'raga ${title(s.ragaId)}',
+  };
+  return s.naming ? '$what · named' : what;
 }

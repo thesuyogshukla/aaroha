@@ -1,0 +1,22 @@
+id: bilawal
+name: Bilawal
+name_dev: बिलावल
+thaat: bilawal
+swars: [S, R, G, m, P, D, N]
+aaroh: "S R G m P D N S'"
+avaroh: "S' N D P m G R S"
+pakad: ["G R , G P , D N S'"]
+vadi: D
+samvadi: G
+nyas: [G, P, D]
+drone: P
+time: "first quarter of the day"
+chalan:
+  - "G m R S"
+  - "S R G m P"
+  - "G P D N S'"
+  - "S' N D P"
+  - "D P m G m R S"
+notes: "Draft for owner review. Shuddha Bilawal, all natural swars; not Alhaiya Bilawal (no komal Ni)."
+source: traditional
+license: public-domain

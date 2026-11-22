@@ -1,0 +1,22 @@
+id: durga
+name: Durga
+name_dev: दुर्गा
+thaat: bilawal
+swars: [S, R, m, P, D]
+aaroh: "S R m P D S'"
+avaroh: "S' D P m R S"
+pakad: ["m P D m R , .D S"]
+vadi: m
+samvadi: S
+nyas: [m, P, S]
+drone: P
+time: "second quarter of the night"
+chalan:
+  - "S R m P"
+  - "m P D S'"
+  - "S' D P m"
+  - "P D m R"
+  - "R .D S"
+notes: "Draft for owner review. Bilawal-thaat Durga: pentatonic, no Ga or Ni. Some traditions give vadi as Dha."
+source: traditional
+license: public-domain

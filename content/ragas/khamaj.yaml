@@ -1,0 +1,22 @@
+id: khamaj
+name: Khamaj
+name_dev: खमाज
+thaat: khamaj
+swars: [S, R, G, m, P, D, n, N]
+aaroh: "S G m P D N S'"
+avaroh: "S' n D P m G R S"
+pakad: ["n D m P D m G , P m G R S"]
+vadi: G
+samvadi: n
+nyas: [G, P, S]
+drone: P
+time: "second quarter of the night"
+chalan:
+  - "S G m P"
+  - "G m P D N S'"
+  - "S' n D P"
+  - "P D m G"
+  - "m G R S"
+notes: "Draft for owner review. Shuddha Ni going up, komal Ni coming down; Re is light in the aaroh."
+source: traditional
+license: public-domain
