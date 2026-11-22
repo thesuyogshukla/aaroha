@@ -87,6 +87,21 @@ The call reaches the mic one **round trip** late (output latency + room + input 
 
 "Try again" listens again without replaying; "Replay" plays the call, then listens. Every judged listen is an attempt; attempt 1 is the first try.
 
+### Hints (M2-A)
+
+When "after a miss, show" is set to *a hint*, each note's verdict becomes a hint that never names a swar (`aaroha_core/lib/src/eval/hint.dart`). The direction comes from the played pitch minus the target, in the session's tuning:
+
+| Verdict | Hint |
+|---|---|
+| Pass | Right |
+| Out of tune | Right note, a little flat / sharp |
+| Wrong swar, up to 250 c away | Too low / high |
+| Wrong swar, further | Much too low / high |
+| Wrong octave | Right note, an octave too low / high |
+| Missing / extra (phrases) | A note is missing / One note too many |
+
+For phrases, a row of arrows shows which way to move each note: ↑ (play higher), ↓ (play lower), ✓, `·` (missing), `+` (extra).
+
 ## 5. Judging rhythm (v0.3)
 
 - **Expected onsets** come from the phrase and the tempo, offset from the listen window's start. The player starts after a count-in, so the downbeat is known. Alternatively ("free start" setting) the first played onset anchors the phrase.

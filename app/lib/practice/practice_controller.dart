@@ -24,6 +24,11 @@ class RoundRecord {
   final attempts = <AttemptResult>[];
   int? id;
 
+  /// The player hit the give-up limit and the answer was revealed (M2-A).
+  bool gaveUp = false;
+
+  int get misses => attempts.where((a) => !a.passed).length;
+
   bool get firstTryPassed => attempts.isNotEmpty && attempts.first.passed;
   bool get passed => attempts.any((a) => a.passed);
 }
@@ -36,6 +41,7 @@ class PracticeState {
     required this.rounds,
     this.level = 0,
     this.message,
+    this.countdown,
   });
 
   final PracticePhase phase;
@@ -47,17 +53,24 @@ class PracticeState {
   final double level;
   final String? message;
 
+  /// Seconds left before an automatic retry; null when none is running.
+  final int? countdown;
+
   RoundRecord? get round => rounds.isEmpty ? null : rounds.last;
   AttemptResult? get lastResult => round?.attempts.lastOrNull;
 
-  PracticeState copyWith({PracticePhase? phase, double? level, String? message}) => PracticeState(
-    phase: phase ?? this.phase,
-    flute: flute,
-    settings: settings,
-    rounds: rounds,
-    level: level ?? this.level,
-    message: message,
-  );
+  /// [message] and [countdown] are not carried over: any other update clears
+  /// them.
+  PracticeState copyWith({PracticePhase? phase, double? level, String? message, int? countdown}) =>
+      PracticeState(
+        phase: phase ?? this.phase,
+        flute: flute,
+        settings: settings,
+        rounds: rounds,
+        level: level ?? this.level,
+        message: message,
+        countdown: countdown,
+      );
 }
 
 final practiceProvider = NotifierProvider<PracticeController, PracticeState?>(
@@ -67,6 +80,7 @@ final practiceProvider = NotifierProvider<PracticeController, PracticeState?>(
 class PracticeController extends Notifier<PracticeState?> {
   StreamSubscription<List<PitchFrame>>? _frames;
   Timer? _advance;
+  Timer? _countdown;
   late TargetGenerator _targets;
   int? _sessionId;
   SessionRecorder? _recorder;
@@ -146,6 +160,7 @@ class PracticeController extends Notifier<PracticeState?> {
   /// Plays the call again, then listens.
   Future<void> replay() async {
     if (state == null) return;
+    _stopTimers();
     if (!await _resume()) return;
     _call();
   }
@@ -153,6 +168,7 @@ class PracticeController extends Notifier<PracticeState?> {
   /// Listens again without replaying the call.
   Future<void> retry() async {
     if (state == null) return;
+    _stopTimers();
     if (!await _resume()) return;
     _listen(from: _audio.time + _frames100ms(1), seconds: 8);
     _recorder?.log('listen', {
@@ -163,7 +179,7 @@ class PracticeController extends Notifier<PracticeState?> {
   }
 
   Future<void> next() async {
-    _advance?.cancel();
+    _stopTimers();
     final s = state;
     if (s == null) return;
     if (s.rounds.length >= s.settings.rounds) {
@@ -178,7 +194,7 @@ class PracticeController extends Notifier<PracticeState?> {
   void pause() {
     final s = state;
     if (s == null || s.phase == PracticePhase.finished) return;
-    _advance?.cancel();
+    _stopTimers();
     _audio.stopPlayback();
     _audio.stop();
     _recorder?.pause();
@@ -186,7 +202,7 @@ class PracticeController extends Notifier<PracticeState?> {
   }
 
   Future<void> finish() async {
-    _advance?.cancel();
+    _stopTimers();
     _audio.stopPlayback();
     final id = _sessionId;
     if (id != null) {
@@ -403,15 +419,63 @@ class PracticeController extends Notifier<PracticeState?> {
           ),
         );
 
-    if (result.passed && s.settings.autoAdvance) {
-      _advance = Timer(const Duration(milliseconds: 1500), next);
+    if (result.passed) {
+      if (s.settings.autoAdvance) _advance = Timer(const Duration(milliseconds: 1500), next);
+      return;
     }
+    switch (afterMiss(round.misses, s.settings)) {
+      case MissStep.giveUp:
+        round.gaveUp = true;
+        _recorder?.log('giveUp', {'round': round.number, 'misses': round.misses});
+        state = state!.copyWith();
+        // A little longer than after a pass, to take in the answer.
+        if (s.settings.autoAdvance) _advance = Timer(const Duration(seconds: 4), next);
+      case MissStep.autoRetry:
+        _startCountdown();
+      case MissStep.wait:
+        break;
+    }
+  }
+
+  /// "Listening again in 3… 2… 1…", then retry (or replay, per settings).
+  void _startCountdown() {
+    var left = 3;
+    state = state!.copyWith(countdown: left);
+    _countdown = Timer.periodic(const Duration(seconds: 1), (timer) {
+      left--;
+      if (left > 0) {
+        state = state!.copyWith(countdown: left);
+        return;
+      }
+      timer.cancel();
+      _countdown = null;
+      final settings = state!.settings;
+      _recorder?.log('autoRetry', {
+        'round': state!.round!.number,
+        'replay': settings.replayBeforeRetry,
+      });
+      settings.replayBeforeRetry ? replay() : retry();
+    });
+  }
+
+  /// A tap during the countdown: stop and wait for the player.
+  void holdCountdown() {
+    if (_countdown == null) return;
+    _countdown!.cancel();
+    _countdown = null;
+    state = state!.copyWith();
+  }
+
+  void _stopTimers() {
+    _advance?.cancel();
+    _countdown?.cancel();
+    _countdown = null;
   }
 
   void _cleanUp() {
     _frames?.cancel();
     _frames = null;
-    _advance?.cancel();
+    _stopTimers();
     _recorder?.stop();
     _recorder = null;
   }

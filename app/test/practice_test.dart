@@ -14,7 +14,7 @@ void main() {
       mode: PracticeMode.phrase,
       swarSet: SwarSet.all,
       range: SaptakRange.withMandra,
-      notation: NotationDisplay.hidden,
+      showTarget: ShowTarget.never,
       script: Script.devanagari,
       toleranceCents: 15,
       octaveMustMatch: false,
@@ -25,6 +25,10 @@ void main() {
       saveSessionAudio: false,
       tuning: TuningChoice.equal,
       strictIntonation: true,
+      missAction: MissAction.autoRetry,
+      replayBeforeRetry: false,
+      giveUpAfter: 5,
+      missReveal: MissReveal.hint,
     );
     final back = PracticeSettings.fromJson(s.toJson());
     expect(back.toJson(), s.toJson());
@@ -49,6 +53,35 @@ void main() {
     );
     expect(r.firstTryPassed, isTrue);
     expect(SessionStats([r]).intonation[p('N')], -30);
+  });
+
+  group('after a miss (M2-A)', () {
+    test('defaults wait for the player and give up after 3 misses', () {
+      const s = PracticeSettings();
+      expect(afterMiss(1, s), MissStep.wait);
+      expect(afterMiss(2, s), MissStep.wait);
+      expect(afterMiss(3, s), MissStep.giveUp);
+    });
+
+    test('auto-retry until the give-up limit', () {
+      const s = PracticeSettings(missAction: MissAction.autoRetry, giveUpAfter: 2);
+      expect(afterMiss(1, s), MissStep.autoRetry);
+      expect(afterMiss(2, s), MissStep.giveUp);
+    });
+
+    test('never giving up keeps retrying', () {
+      const s = PracticeSettings(missAction: MissAction.autoRetry, giveUpAfter: 0);
+      expect(afterMiss(50, s), MissStep.autoRetry);
+    });
+  });
+
+  test('old "show the notes" settings carry over', () {
+    PracticeSettings load(String notation) => PracticeSettings.fromJson({'notation': notation});
+    expect(load('shown').showTarget, ShowTarget.always);
+    expect(load('afterAttempt').showTarget, ShowTarget.roundEnd);
+    expect(load('hidden').showTarget, ShowTarget.never);
+    // The old "after attempt" revealed the answer after a miss; it still does.
+    expect(load('afterAttempt').missReveal, MissReveal.answer);
   });
 
   test('unknown or missing settings fall back to defaults', () {

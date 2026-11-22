@@ -71,17 +71,22 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           actions: [TextButton(onPressed: controller.finish, child: const Text('End'))],
         ),
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                const Spacer(),
-                if (round != null) _target(context, s),
-                const SizedBox(height: 32),
-                _phase(context, s),
-                const Spacer(),
-                _buttons(context, s, controller),
-              ],
+          // During an automatic-retry countdown, a tap anywhere pauses it.
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: s.countdown == null ? null : controller.holdCountdown,
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  const Spacer(),
+                  if (round != null) _target(context, s),
+                  const SizedBox(height: 32),
+                  _phase(context, s),
+                  const Spacer(),
+                  _buttons(context, s, controller),
+                ],
+              ),
             ),
           ),
         ),
@@ -89,18 +94,27 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     );
   }
 
-  /// The target, shown or hidden per the notation setting.
+  /// Whether the target's swars may be shown now (docs/08 M2-A).
+  bool _targetVisible(PracticeState s) {
+    final round = s.round!;
+    final result = s.lastResult;
+    final judged = s.phase == PracticePhase.verdict && result != null;
+    final missed = judged && !result.passed;
+    if (round.gaveUp || _revealed) return true;
+    return switch (s.settings.showTarget) {
+      ShowTarget.always => true,
+      ShowTarget.roundEnd => round.passed || (missed && s.settings.missReveal == MissReveal.answer),
+      ShowTarget.never => false,
+    };
+  }
+
+  /// The target: its swars, or one "?" per note while hidden.
   Widget _target(BuildContext context, PracticeState s) {
     final round = s.round!;
     final result = s.lastResult;
     final judged = s.phase == PracticePhase.verdict && result != null;
-    final show = switch (s.settings.notation) {
-      NotationDisplay.shown => true,
-      NotationDisplay.afterAttempt => judged || round.passed,
-      NotationDisplay.hidden => round.passed || _revealed,
-    };
     final scheme = Theme.of(context).colorScheme;
-    if (!show) {
+    if (!_targetVisible(s)) {
       return Column(
         children: [
           Wrap(
@@ -110,7 +124,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                 Text('?', style: TextStyle(fontSize: 48, color: scheme.outline)),
             ],
           ),
-          if (judged && s.settings.notation == NotationDisplay.hidden)
+          if (judged)
             TextButton(
               onPressed: () => setState(() => _revealed = true),
               child: const Text('Reveal'),
@@ -171,8 +185,45 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   Widget _verdict(BuildContext context, PracticeState s) {
     final theme = Theme.of(context);
     final result = s.lastResult!;
+    final round = s.round!;
     final script = s.settings.script;
-    final hidden = s.settings.notation == NotationDisplay.hidden && !s.round!.passed && !_revealed;
+    final hideNames = !_targetVisible(s);
+    final lines = <Widget>[];
+    Text line(String text, [TextStyle? style]) =>
+        Text(text, textAlign: TextAlign.center, style: style ?? theme.textTheme.titleMedium);
+
+    if (round.gaveUp) {
+      // The answer, with what was played, then on to the next round.
+      lines.add(line('The answer is shown above', theme.textTheme.titleMedium));
+      for (final n in result.notes) {
+        lines.add(line(_describe(n, script, hideTarget: false)));
+      }
+      lines.add(
+        line(
+          s.settings.autoAdvance ? 'Moving on…' : 'Tap Next to move on',
+          theme.textTheme.bodyMedium,
+        ),
+      );
+    } else if (result.passed || s.settings.missReveal == MissReveal.answer) {
+      for (final n in result.notes) {
+        lines.add(line(_describe(n, script, hideTarget: hideNames)));
+      }
+    } else if (s.settings.missReveal == MissReveal.hint) {
+      final tuning = s.settings.tuning.tuning;
+      final hints = [for (final n in result.notes) hintFor(n, tuning)];
+      if (round.target.length > 1) {
+        // One arrow per note: which way to move it.
+        lines.add(line(hints.map(hintArrow).join('   '), theme.textTheme.headlineMedium));
+      }
+      for (final h in hints) {
+        if (h is HintRight) continue;
+        lines.add(line(hintText(h)));
+      }
+    } else {
+      lines.add(line('Not quite'));
+    }
+
+    final countdown = s.countdown;
     return Column(
       children: [
         // A pass with some notes out of tune gets the in-between colour.
@@ -186,15 +237,12 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
               : theme.colorScheme.tertiary,
         ),
         const SizedBox(height: 12),
-        for (final n in result.notes)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Text(
-              _describe(n, script, hideTarget: hidden),
-              textAlign: TextAlign.center,
-              style: theme.textTheme.titleMedium,
-            ),
-          ),
+        for (final l in lines) Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: l),
+        if (countdown != null) ...[
+          const SizedBox(height: 16),
+          Text('Listening again in $countdown…', style: theme.textTheme.titleLarge),
+          Text('Tap anywhere to pause', style: theme.textTheme.bodySmall),
+        ],
       ],
     );
   }

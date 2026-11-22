@@ -1,6 +1,7 @@
 /// Pure Dart music model and evaluation for Aaroha.
 library;
 
+export 'src/eval/hint.dart';
 export 'src/eval/judge.dart';
 export 'src/eval/pitch_frame.dart';
 export 'src/eval/segmenter.dart';

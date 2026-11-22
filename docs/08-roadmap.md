@@ -37,14 +37,42 @@ Acceptance: the owner does a 15-minute riyaz with it for a week without needing 
 
 Status (2026-11-02): everything above is built and installed on the moto g45. Covered by checks: notation parser and printer, judging, target generation, segmenter (with real G-flute fixtures), and the flute voice reading back in tune on all 8 flutes. Not yet done: the owner's real practice rounds on the phone (to tune the end-of-attempt timings and the call's loudness), and the D# fixtures. The notation parser, listed under M2, is done already.
 
-## M2 — v0.2: real material
+## M2 — v0.2: hands-free, ear-only, adaptive, real material
 
-- Notation parser complete for pitch (docs/03), content files loaded from `content/`.
-- Alankar generator.
-- Raga mode with fixed phrases for a starter set of ragas (docs/06).
-- All three octaves within flute range.
-- Live pitch trace over target notes.
-- Confusion grid and adaptive drilling of weak swars.
+Planned with the owner on 2026-11-22 (decisions.md D32). Built in this order; each piece ends with a short real session (on the flute, or by ear for B) before the next starts.
+
+Already done ahead of M2: the notation parser (docs/03) and all three octaves within the flute's range.
+
+### A. Hands-free practice
+- **After a miss** setting: *Wait for me* (today) or *Try again automatically*: the verdict shows, then "Listening again in 3… 2… 1…", then listening resumes. A tap anywhere during the countdown pauses it.
+- **Replay before retrying** (on/off): replay the call before each automatic retry, or just listen again.
+- **Give up after N misses** (default 3): reveal the answer and, with auto-advance on, move to the next round. Together with auto-advance after a pass, a session can run without touching the phone.
+- **Show the target** setting, replacing "Show the notes": *always*, *when the round ends* (passed or given up), *never*. With "after a miss, show: the answer", a miss reveals it too (as the old "after attempt" did); a *Reveal* button peeks at any time; giving up always reveals it.
+- **After a miss, show**: *the answer* (today: "You played Ma, not Ga"), *a hint only*, or *nothing* (just ✗).
+  - A hint gives direction and size, no names: "A little low/high" (right swar, out of tune), "Too low/high" (one swar off), "Much too low/high" (further). For phrases, one arrow per note position (↑ ↓ ✓), plus "one note too many" or "a note is missing".
+
+Acceptance: a 20-round session runs with both hands on the flute; hints never reveal a swar name.
+
+### B. Listen & name (ear only, no mic)
+- The drone plays and the app plays a swar or short phrase. The player taps swar buttons; for a phrase, the notes in order. Each tap gets an instant ✓/✗.
+- The buttons show only the swars in the chosen set (Latin or Devanagari). A mandra / madhya / taar switch appears only when the session uses more than one octave.
+- A "hear Sa" button replays the reference. The same hint, give-up and auto-advance settings as A apply.
+- No microphone, no recording: usable anywhere with headphones. It counts as a separate mode in history; answers feed the same confusion stats as flute practice (C).
+
+Acceptance: a 20-round naming session takes under 5 minutes; confusions show up in the same stats as flute sessions.
+
+### C. Smart drilling
+- **Confusion grid** in stats (target × answered, first tries, both modes) and per-flute intonation (docs/05 §7).
+- **Adaptive targets** (docs/05 §8): weight swars and phrases by recent first-try errors; sometimes play a confused pair back to back as a contrast drill (e.g. Ga then Ma).
+
+### D. Real material
+- **Alankars**: pattern definitions applied to any swar set (docs/06), walked up and down within the flute's range.
+- **Raga mode**: aaroh, avaroh, pakad and chalan phrases for 8 starter ragas: Bhupali, Yaman, Bilawal, Kafi, Bhairav, Durga, Khamaj, Des. Raga files live in `content/`, reviewed by the owner, with the drone's first string set per raga.
+- Longer phrases (5–8 notes): revisit the call's pace and the end-of-attempt timings (D27) with real sessions.
+
+### E. Pitch trace on the verdict
+- After an attempt, the player's pitch curve is drawn against the target notes, showing *how* a note was off: scooped attack, sagging tail, wavering, a crack.
+- Never shown live while playing: that would turn ear training into reading a tuner.
 
 ## M3 — v0.3: rhythm
 
@@ -57,7 +85,6 @@ Status (2026-11-02): everything above is built and installed on the moto g45. Co
 
 - Generated raga phrases following each raga's rules.
 - Ornaments: kan and meend (notation + contour comparison).
-- Name-the-swar mode.
 - User-entered tunes/compositions.
 - Sampled bansuri voice for the call; better tanpura.
 

@@ -34,7 +34,7 @@ Traditionally that someone is the guru. Aaroha does the repetitive part of that 
 | **Raga** | Aaroh, avaroh, pakad and chalan phrases of a raga | v0.2 (fixed phrases), v0.4 (generated) |
 | **Rhythm** | Phrases with different note lengths, in a taal, over metronome or theka | v0.3 |
 | **Composition** | Lines of a bandish/gat or a user-entered tune | v0.4 |
-| **Name the swar** *(bonus)* | One note or a short phrase; you tap the swar names instead of playing | v0.4 |
+| **Listen & name** | One note or a short phrase; you tap the swar names instead of playing. Ear only: no flute, no mic, usable anywhere with headphones | v0.2 (M2-B) |
 
 ### A round
 
@@ -44,6 +44,7 @@ Traditionally that someone is the guru. Aaroha does the repetitive part of that 
 4. The app listens (the *response*). A visual ring/indicator shows it's listening.
 5. Verdict: pass or fail, with detail (which swar you played, cents off, and for phrases which note went wrong).
 6. Options: **Retry** (counts as a further attempt), **Replay the call**, **Next**. Auto-advance on pass is a setting.
+7. Hands-free (v0.2, M2-A): after a miss the app can retry by itself ("Listening again in 3… 2… 1…", optionally replaying the call first), and after a set number of misses reveal the answer and move on. What a miss reveals is a setting: the answer, a hint (direction and size only), or nothing.
 
 A **session** is a set of rounds (default 20) ending in a summary: first-try accuracy, slowest/most-confused swars, intonation notes.
 
@@ -73,7 +74,11 @@ The user has several flutes. Each has a **profile** (name, nominal Sa, calibrate
 | Octave must match | On | Off = judge pitch class only (easier) |
 | Tuning | Just intonation | Or equal temperament; see 02 and D31 |
 | Strict intonation | Off | Off: the right swar passes and its cents are shown. On: it must also be within tolerance (D31) |
-| Notation display | Shown | Shown / After attempt / Hidden |
+| Show the target | When the round ends | Always / when the round ends / never (M2-A; replaced "notation display": shown → always, after attempt → when the round ends, hidden → never) |
+| After a miss *(M2-A)* | Wait for me | Or *Try again automatically* after a 3-2-1 countdown |
+| Replay before retrying *(M2-A)* | On | Replay the call before an automatic retry, or just listen again |
+| Give up after *(M2-A)* | 3 misses | Reveal the answer and move on |
+| After a miss, show *(M2-A)* | The answer | Or a hint ("a little / too / much too" low or high, per note for phrases), or nothing |
 | Notation script | Latin (S R G) | Or Devanagari (सा रे ग) |
 | Drone | On, octave below Sa | Pa / Ma / Ni tuning per raga; volume |
 | Duck drone while listening | Off | Turn on if drone bleed hurts detection |

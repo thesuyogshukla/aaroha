@@ -8,13 +8,33 @@ enum PracticeMode {
   final String label;
 }
 
-/// When the target's notation is shown (docs/01-product.md).
-enum NotationDisplay {
-  shown('Shown'),
-  afterAttempt('After attempt'),
-  hidden('Hidden');
+/// When the target's notation is shown (docs/08 M2-A). With "After a miss,
+/// show: the answer", a miss also reveals it.
+enum ShowTarget {
+  always('Always'),
+  roundEnd('When the round ends'),
+  never('Never');
 
-  const NotationDisplay(this.label);
+  const ShowTarget(this.label);
+  final String label;
+}
+
+/// What happens after a missed attempt (M2-A).
+enum MissAction {
+  wait('Wait for me'),
+  autoRetry('Try again automatically');
+
+  const MissAction(this.label);
+  final String label;
+}
+
+/// What a missed attempt reveals (M2-A).
+enum MissReveal {
+  answer('The answer'),
+  hint('A hint'),
+  nothing('Nothing');
+
+  const MissReveal(this.label);
   final String label;
 }
 
@@ -36,13 +56,13 @@ enum TuningChoice {
   final Tuning tuning;
 }
 
-/// Settings from docs/01-product.md that v0.1 uses.
+/// Practice settings (docs/01-product.md).
 class PracticeSettings {
   const PracticeSettings({
     this.mode = PracticeMode.single,
     this.swarSet = SwarSet.shuddha,
     this.range = SaptakRange.madhya,
-    this.notation = NotationDisplay.afterAttempt,
+    this.showTarget = ShowTarget.roundEnd,
     this.script = Script.latin,
     this.toleranceCents = 25,
     this.octaveMustMatch = true,
@@ -53,12 +73,16 @@ class PracticeSettings {
     this.saveSessionAudio = true,
     this.tuning = TuningChoice.just,
     this.strictIntonation = false,
+    this.missAction = MissAction.wait,
+    this.replayBeforeRetry = true,
+    this.giveUpAfter = 3,
+    this.missReveal = MissReveal.answer,
   });
 
   final PracticeMode mode;
   final SwarSet swarSet;
   final SaptakRange range;
-  final NotationDisplay notation;
+  final ShowTarget showTarget;
   final Script script;
   final double toleranceCents;
   final bool octaveMustMatch;
@@ -77,6 +101,15 @@ class PracticeSettings {
   /// Off: the right swar passes even when out of tune (ear first, D31).
   final bool strictIntonation;
 
+  final MissAction missAction;
+
+  /// With automatic retries: play the call again before listening.
+  final bool replayBeforeRetry;
+
+  /// Misses before the answer is revealed and the round ends; 0 = never.
+  final int giveUpAfter;
+  final MissReveal missReveal;
+
   JudgeSettings judge(int sampleRate) => JudgeSettings(
     toleranceCents: toleranceCents,
     octaveMustMatch: octaveMustMatch,
@@ -89,7 +122,7 @@ class PracticeSettings {
     PracticeMode? mode,
     SwarSet? swarSet,
     SaptakRange? range,
-    NotationDisplay? notation,
+    ShowTarget? showTarget,
     Script? script,
     double? toleranceCents,
     bool? octaveMustMatch,
@@ -100,11 +133,15 @@ class PracticeSettings {
     bool? saveSessionAudio,
     TuningChoice? tuning,
     bool? strictIntonation,
+    MissAction? missAction,
+    bool? replayBeforeRetry,
+    int? giveUpAfter,
+    MissReveal? missReveal,
   }) => PracticeSettings(
     mode: mode ?? this.mode,
     swarSet: swarSet ?? this.swarSet,
     range: range ?? this.range,
-    notation: notation ?? this.notation,
+    showTarget: showTarget ?? this.showTarget,
     script: script ?? this.script,
     toleranceCents: toleranceCents ?? this.toleranceCents,
     octaveMustMatch: octaveMustMatch ?? this.octaveMustMatch,
@@ -115,13 +152,17 @@ class PracticeSettings {
     saveSessionAudio: saveSessionAudio ?? this.saveSessionAudio,
     tuning: tuning ?? this.tuning,
     strictIntonation: strictIntonation ?? this.strictIntonation,
+    missAction: missAction ?? this.missAction,
+    replayBeforeRetry: replayBeforeRetry ?? this.replayBeforeRetry,
+    giveUpAfter: giveUpAfter ?? this.giveUpAfter,
+    missReveal: missReveal ?? this.missReveal,
   );
 
   Map<String, dynamic> toJson() => {
     'mode': mode.name,
     'swarSet': swarSet.name,
     'range': range.name,
-    'notation': notation.name,
+    'showTarget': showTarget.name,
     'script': script.name,
     'toleranceCents': toleranceCents,
     'octaveMustMatch': octaveMustMatch,
@@ -132,6 +173,10 @@ class PracticeSettings {
     'saveSessionAudio': saveSessionAudio,
     'tuning': tuning.name,
     'strictIntonation': strictIntonation,
+    'missAction': missAction.name,
+    'replayBeforeRetry': replayBeforeRetry,
+    'giveUpAfter': giveUpAfter,
+    'missReveal': missReveal.name,
   };
 
   factory PracticeSettings.fromJson(Map<String, dynamic> j) {
@@ -142,7 +187,14 @@ class PracticeSettings {
       mode: byName(PracticeMode.values, j['mode'], d.mode),
       swarSet: byName(SwarSet.values, j['swarSet'], d.swarSet),
       range: byName(SaptakRange.values, j['range'], d.range),
-      notation: byName(NotationDisplay.values, j['notation'], d.notation),
+      // Before M2-A this was "notation": shown / afterAttempt / hidden.
+      showTarget: j['showTarget'] != null
+          ? byName(ShowTarget.values, j['showTarget'], d.showTarget)
+          : switch (j['notation']) {
+              'shown' => ShowTarget.always,
+              'hidden' => ShowTarget.never,
+              _ => d.showTarget,
+            },
       script: byName(Script.values, j['script'], d.script),
       toleranceCents: (j['toleranceCents'] as num?)?.toDouble() ?? d.toleranceCents,
       octaveMustMatch: j['octaveMustMatch'] as bool? ?? d.octaveMustMatch,
@@ -153,6 +205,19 @@ class PracticeSettings {
       saveSessionAudio: j['saveSessionAudio'] as bool? ?? d.saveSessionAudio,
       tuning: byName(TuningChoice.values, j['tuning'], d.tuning),
       strictIntonation: j['strictIntonation'] as bool? ?? d.strictIntonation,
+      missAction: byName(MissAction.values, j['missAction'], d.missAction),
+      replayBeforeRetry: j['replayBeforeRetry'] as bool? ?? d.replayBeforeRetry,
+      giveUpAfter: j['giveUpAfter'] as int? ?? d.giveUpAfter,
+      missReveal: byName(MissReveal.values, j['missReveal'], d.missReveal),
     );
   }
+}
+
+/// What the round loop does after a missed attempt (docs/08 M2-A).
+enum MissStep { wait, autoRetry, giveUp }
+
+/// [misses] counts this round's failed attempts, including the one just judged.
+MissStep afterMiss(int misses, PracticeSettings settings) {
+  if (settings.giveUpAfter > 0 && misses >= settings.giveUpAfter) return MissStep.giveUp;
+  return settings.missAction == MissAction.autoRetry ? MissStep.autoRetry : MissStep.wait;
 }

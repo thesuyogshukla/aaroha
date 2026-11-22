@@ -170,11 +170,40 @@ class _Options extends ConsumerWidget {
           settings.range,
           (v) => save(settings.copyWith(range: v)),
         ),
-        label('Show the notes'),
+        label('Show the target'),
         segments(
-          [for (final n in NotationDisplay.values) (n, n.label)],
-          settings.notation,
-          (v) => save(settings.copyWith(notation: v)),
+          [
+            (ShowTarget.always, 'Always'),
+            (ShowTarget.roundEnd, 'Round end'),
+            (ShowTarget.never, 'Never'),
+          ],
+          settings.showTarget,
+          (v) => save(settings.copyWith(showTarget: v)),
+        ),
+        label('After a miss, show'),
+        segments(
+          [for (final r in MissReveal.values) (r, r.label)],
+          settings.missReveal,
+          (v) => save(settings.copyWith(missReveal: v)),
+        ),
+        label('After a miss'),
+        segments(
+          [(MissAction.wait, 'Wait for me'), (MissAction.autoRetry, 'Retry by itself')],
+          settings.missAction,
+          (v) => save(settings.copyWith(missAction: v)),
+        ),
+        if (settings.missAction == MissAction.autoRetry)
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Replay the call before retrying'),
+            value: settings.replayBeforeRetry,
+            onChanged: (v) => save(settings.copyWith(replayBeforeRetry: v)),
+          ),
+        label('Give up and show the answer after'),
+        segments(
+          [(2, '2 misses'), (3, '3 misses'), (5, '5 misses'), (0, 'Never')],
+          settings.giveUpAfter,
+          (v) => save(settings.copyWith(giveUpAfter: v)),
         ),
         label('Tuning'),
         segments(
