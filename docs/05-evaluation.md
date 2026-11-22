@@ -55,6 +55,8 @@ Take the first note of at least 300 ms in the listen window.
 
 The result always carries what was heard: swar, saptak, deviation in cents, stability. The UI shows "Ga, 32 cents flat" rather than just "fail".
 
+**Which outcomes pass the attempt:** *Pass* and, unless **strict intonation** is on, *Out of tune*: the ear got the swar right, so the round is passed and the cents are shown (amber) and tracked in the intonation stats. Wrong swar, wrong octave and no note always fail (decisions.md D31). Deviations are measured in the session's tuning, just intonation by default.
+
 **Deviation is measured from the target pitch.** With `dev = stableCents − targetCents` (after the octave rule):
 
 - `|dev| ≤ tolerance` → pass
@@ -69,7 +71,7 @@ The 50-cent line is half a semitone, the natural midpoint between neighbouring s
 2. Merge back-to-back played notes on the same pitch, unless the target itself repeats a pitch back to back. A note split by an extra breath then counts once.
 3. Align the played sequence with the targets by **edit distance**. A pair costs 0 when the played note is within 50 c of its target (in or out of tune), else 1; a missing or extra note costs 1. On ties, notes match the earliest targets they can ("S S R" played as "S R" misses the second S), but a substitution beats missing + extra.
 4. Each matched pair is judged as in single-swar mode.
-5. **Pass** = every target matched and in tune, no extra notes.
+5. **Pass** = every target matched with the right swar, no extra notes. With **strict intonation** on, every note must also be in tune.
 
 Result: per-note verdicts, so the UI can colour each note of the notation.
 

@@ -32,6 +32,7 @@ class JudgeSettings {
     this.tuning = Tuning.equal,
     this.singleMinNoteMs = 300,
     this.sampleRate = 48000,
+    this.strictIntonation = false,
   });
 
   final double toleranceCents;
@@ -41,6 +42,12 @@ class JudgeSettings {
   /// In single-swar mode, the first note at least this long is judged.
   final double singleMinNoteMs;
   final int sampleRate;
+
+  /// When false (the default), a right swar that is out of tune still passes
+  /// the attempt: Aaroha trains the ear first, and the cents are reported
+  /// and tracked rather than failed (decisions.md D31). When true, every
+  /// note must be within [toleranceCents].
+  final bool strictIntonation;
 }
 
 class JudgedNote {
@@ -58,7 +65,11 @@ class JudgedNote {
   /// for it.
   final double? deviation;
 
+  /// In tune: the right swar within tolerance.
   bool get passed => verdict == Verdict.pass;
+
+  /// The right swar, in tune or not.
+  bool get rightSwar => verdict == Verdict.pass || verdict == Verdict.outOfTune;
 
   @override
   String toString() =>
@@ -67,12 +78,21 @@ class JudgedNote {
 }
 
 class AttemptResult {
-  const AttemptResult(this.notes);
+  const AttemptResult(this.notes, {this.strictIntonation = false});
 
   /// One entry per target in order, with extra played notes in between.
   final List<JudgedNote> notes;
 
-  bool get passed => notes.isNotEmpty && notes.every((n) => n.passed);
+  /// See [JudgeSettings.strictIntonation].
+  final bool strictIntonation;
+
+  /// Every target matched with the right swar (and in tune, if strict), no
+  /// extra notes.
+  bool get passed =>
+      notes.isNotEmpty && notes.every((n) => strictIntonation ? n.passed : n.rightSwar);
+
+  /// Every note also within tolerance.
+  bool get inTune => notes.isNotEmpty && notes.every((n) => n.passed);
 
   List<JudgedNote> get targets => [
     for (final n in notes)
@@ -110,10 +130,14 @@ JudgedNote judgeNote(Pitch target, DetectedNote played, JudgeSettings settings) 
 AttemptResult judgeSingle(Pitch target, List<DetectedNote> notes, JudgeSettings settings) {
   for (final n in notes) {
     if (n.durationMs(settings.sampleRate) >= settings.singleMinNoteMs) {
-      return AttemptResult([judgeNote(target, n, settings)]);
+      return AttemptResult([
+        judgeNote(target, n, settings),
+      ], strictIntonation: settings.strictIntonation);
     }
   }
-  return AttemptResult([JudgedNote(verdict: Verdict.missing, target: target)]);
+  return AttemptResult([
+    JudgedNote(verdict: Verdict.missing, target: target),
+  ], strictIntonation: settings.strictIntonation);
 }
 
 /// Phrase mode (pitch only): aligns played notes to targets with edit
@@ -168,7 +192,7 @@ AttemptResult judgePhrase(List<Pitch> targets, List<DetectedNote> notes, JudgeSe
       j--;
     }
   }
-  return AttemptResult(out.reversed.toList());
+  return AttemptResult(out.reversed.toList(), strictIntonation: settings.strictIntonation);
 }
 
 /// Merges back-to-back played notes on the same pitch, unless the targets

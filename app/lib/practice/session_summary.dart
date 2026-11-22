@@ -30,15 +30,18 @@ class NoteData {
 }
 
 class RoundData {
-  const RoundData(this.target, this.attempts);
+  const RoundData(this.target, this.attempts, this.passed);
   final List<Pitch> target;
+
+  /// Whether each attempt passed, as decided when it was judged (with the
+  /// session's own strict-intonation setting, D31).
+  final List<bool> passed;
   final List<List<NoteData>> attempts;
 
-  bool get firstTryPassed =>
-      attempts.isNotEmpty && attempts.first.every((n) => n.verdict == Verdict.pass);
+  bool get firstTryPassed => passed.isNotEmpty && passed.first;
   int? get passedOnAttempt {
     for (var i = 0; i < attempts.length; i++) {
-      if (attempts[i].every((n) => n.verdict == Verdict.pass)) return i + 1;
+      if (passed[i]) return i + 1;
     }
     return null;
   }
@@ -105,13 +108,17 @@ final sessionRoundsProvider = FutureProvider.family<List<RoundData>, int>((ref, 
               ..orderBy([(a) => OrderingTerm.asc(a.number)]))
             .get();
     out.add(
-      RoundData(parsePhrase(r.target).pitches, [
-        for (final a in attempts)
-          [
-            for (final n in jsonDecode(a.resultJson) as List)
-              NoteData.fromJson((n as Map).cast<String, Object?>()),
-          ],
-      ]),
+      RoundData(
+        parsePhrase(r.target).pitches,
+        [
+          for (final a in attempts)
+            [
+              for (final n in jsonDecode(a.resultJson) as List)
+                NoteData.fromJson((n as Map).cast<String, Object?>()),
+            ],
+        ],
+        [for (final a in attempts) a.passed],
+      ),
     );
   }
   return out;

@@ -25,7 +25,7 @@ Notes:
 - Lowercase means the lower form. For Ma that is shuddha Ma (`m`); uppercase `M` is tivra Ma.
 - Just intonation has more than one common value for some swars (komal Ni is also used as 16/9 = 996.1 cents). The tuning table is data, not code, so alternatives can be added.
 - Ragas sometimes shade a swar (Bhairav's komal Re sits lower than Marwa's). v0.x does not model this per raga; the tolerance absorbs it. A per-raga cents override is a possible later feature.
-- **Default tuning is equal temperament** for v0.1. The ET/just differences (12–16 cents on Ga, Ni, komal Ga) fit inside a ±25 cent tolerance. Once fixtures show where the owner's flutes actually sit, revisit the default (decisions.md D9).
+- **Default tuning is just intonation** (a setting; equal temperament is the other choice). The call is played and attempts are judged in the chosen tuning. Just intonation fits how the owner actually plays Dha and Ni and matches the tanpura's natural intervals (decisions.md D31, superseding D9).
 
 ## Saptak (octave)
 

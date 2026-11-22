@@ -176,6 +176,12 @@ class _Options extends ConsumerWidget {
           settings.notation,
           (v) => save(settings.copyWith(notation: v)),
         ),
+        label('Tuning'),
+        segments(
+          [for (final t in TuningChoice.values) (t, t.label)],
+          settings.tuning,
+          (v) => save(settings.copyWith(tuning: v)),
+        ),
         label('Tolerance'),
         segments(
           [(35.0, '±35 c'), (25.0, '±25 c'), (15.0, '±15 c')],
@@ -213,6 +219,15 @@ class _Options extends ConsumerWidget {
               ),
             ],
           ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Strict intonation'),
+          subtitle: const Text(
+            'Off: the right swar passes and the cents are shown. On: it must also be within the tolerance',
+          ),
+          value: settings.strictIntonation,
+          onChanged: (v) => save(settings.copyWith(strictIntonation: v)),
+        ),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('Octave must match'),

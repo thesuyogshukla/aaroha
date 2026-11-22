@@ -175,10 +175,15 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     final hidden = s.settings.notation == NotationDisplay.hidden && !s.round!.passed && !_revealed;
     return Column(
       children: [
+        // A pass with some notes out of tune gets the in-between colour.
         Icon(
           result.passed ? Icons.check_circle : Icons.cancel,
           size: 56,
-          color: result.passed ? theme.colorScheme.primary : theme.colorScheme.error,
+          color: !result.passed
+              ? theme.colorScheme.error
+              : result.inTune
+              ? theme.colorScheme.primary
+              : theme.colorScheme.tertiary,
         ),
         const SizedBox(height: 12),
         for (final n in result.notes)
@@ -212,7 +217,8 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     return switch (n.verdict) {
       Verdict.pass => '✓ ${hideTarget ? 'Right' : target}  ${cents(n.deviation!)}',
       Verdict.outOfTune =>
-        '${hideTarget ? 'Right swar' : target}, but ${n.deviation! < 0 ? 'flat' : 'sharp'} ${cents(n.deviation!)}',
+        '✓ ${hideTarget ? 'Right swar' : target}, but ${n.deviation! < 0 ? 'flat' : 'sharp'} '
+            '${cents(n.deviation!)}',
       Verdict.wrongSwar =>
         'You played ${name(n.played!.pitch)}${hideTarget ? '' : ', not $target'}',
       Verdict.wrongOctave => 'Right swar, wrong octave (${name(n.played!.pitch)})',
@@ -263,9 +269,13 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
 
   static List<RoundData> _roundData(PracticeState s) => [
     for (final r in s.rounds)
-      RoundData(r.target, [
-        for (final a in r.attempts)
-          [for (final n in a.notes) NoteData(n.target, n.verdict, n.played?.pitch, n.deviation)],
-      ]),
+      RoundData(
+        r.target,
+        [
+          for (final a in r.attempts)
+            [for (final n in a.notes) NoteData(n.target, n.verdict, n.played?.pitch, n.deviation)],
+        ],
+        [for (final a in r.attempts) a.passed],
+      ),
   ];
 }

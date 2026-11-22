@@ -59,6 +59,39 @@ void main() {
     });
   });
 
+  group('ear first (decisions.md D31)', () {
+    test('the owner\'s flat Ni passes as the right swar, with its cents', () {
+      // Sessions 8 and 10: Ni at 1063-1074 c above Sa, 26-37 c below
+      // equal-tempered Ni.
+      for (final cents in [1063.0, 1065.0, 1072.0, 1074.0]) {
+        final r = judgeSingle(p('N'), [played(cents)], settings);
+        expect(r.notes.single.verdict, Verdict.outOfTune);
+        expect(r.passed, isTrue);
+        expect(r.inTune, isFalse);
+      }
+    });
+
+    test('with just intonation the same Ni is in tune at ±25 c', () {
+      const just = JudgeSettings(tuning: Tuning.just);
+      for (final cents in [1065.0, 1072.0, 1074.0]) {
+        final r = judgeSingle(p('N'), [played(cents)], just);
+        expect(r.notes.single.verdict, Verdict.pass, reason: '$cents c');
+      }
+    });
+
+    test('a wrong swar still fails, strict or not', () {
+      final r = judgeSingle(p('N'), [played(1036)], settings); // komal Ni territory
+      expect(r.notes.single.verdict, Verdict.wrongSwar);
+      expect(r.passed, isFalse);
+    });
+
+    test('a wrong octave still fails', () {
+      final r = judgeSingle(p('N'), [played(-100)], settings);
+      expect(r.notes.single.verdict, Verdict.wrongOctave);
+      expect(r.passed, isFalse);
+    });
+  });
+
   group('phrase', () {
     test('all notes right', () {
       final r = judgePhrase(ps('S R G m'), [
@@ -71,10 +104,18 @@ void main() {
       expect(verdicts(r), 'pass pass pass pass');
     });
 
-    test('one note out of tune is shown on that note', () {
+    test('one note out of tune is shown on that note, and still passes', () {
       final r = judgePhrase(ps('S R G'), [played(0), played(240), played(400)], settings);
-      expect(r.passed, isFalse);
       expect(verdicts(r), 'pass outOfTune pass');
+      expect(r.passed, isTrue, reason: 'right swars pass unless intonation is strict');
+      expect(r.inTune, isFalse);
+    });
+
+    test('strict intonation fails an out-of-tune note', () {
+      const strict = JudgeSettings(strictIntonation: true);
+      final r = judgePhrase(ps('S R G'), [played(0), played(240), played(400)], strict);
+      expect(verdicts(r), 'pass outOfTune pass');
+      expect(r.passed, isFalse);
     });
 
     test('a wrong swar in the middle', () {

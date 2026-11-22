@@ -29,7 +29,7 @@ See docs/03.
 ### D8 — Android first, iOS after the app is solid (2026-10-25)
 **Why:** the owner's primary device. iOS needs its own audio session work, deferred to M5.
 
-### D9 — Equal temperament as the default tuning for v0.1 (2026-10-25)
+### D9 — Equal temperament as the default tuning for v0.1 (2026-10-25) — superseded by D31
 **Why:** differences from just intonation (12–16 cents on a few swars) fit inside the ±25 cent default tolerance, and ET is simplest to reason about. Revisit once fixtures show where the owner's flutes actually sit.
 
 ### D10 — Turn-taking: the app plays, then listens (2026-10-25)
@@ -113,6 +113,10 @@ In attempts with more than one note, a note more than ~16.5 dB below the attempt
 ### D30 — The app is renamed Aaroha (2026-11-22)
 Everything that named the app is now Aaroha: the app title and launcher label, the Android application id (`app.aaroha.aaroha`), the Dart packages (`aaroha_core`, `aaroha_audio`, app package `aaroha`), the C++ namespace and header (`aaroha::`, `aaroha_audio.h`), the C API prefix (`ar_` / `AR_`, Dart structs `Ar…`), the database file, and the docs. The raga term *pakad* (a raga's signature phrase) is unchanged wherever it means the musical idea.
 **Why:** the owner's choice of name, made before the first commit. Consequences: a new application id makes Android treat it as a new app, so the old "Pakad" install keeps its own data (flutes, calibrations, history) until it is removed. Its recordings on the phone were already pulled to `fixtures/raw/`. On-phone recordings now go under `/sdcard/Android/data/app.aaroha.aaroha/files/recordings/`.
+
+### D31 — Ear first: the right swar passes; just intonation by default (2026-11-22)
+By default a right swar passes the attempt even when out of tune (cents still shown and tracked); a **Strict intonation** setting brings back failing it. Calls and judging use a **Tuning** setting, just intonation by default (supersedes D9).
+**Why:** on 2026-11-22 the owner got stuck on a Ni round (sessions 8–10). The app's call was exact (heard back within 0.2 c), but the owner's G-flute Ni sat at a fixed 726–732 Hz on every try, 26–37 c below equal-tempered Ni. That was outside ±25 c, so every try failed, though the ear had found the right swar. Recalibrating Sa couldn't help (it moves the target, not the flute's note); one sharp calibration (399.2 Hz) even pushed Ni into komal Ni. Across sessions 4–10, the owner's swars compared with each tuning: Dha −12 c ET vs +4 c just, Ni −26 c ET vs −15 c just, Re +12 vs +8, Ga +4 vs +17, Sa/Ma/Pa within 4 c either way. Just intonation fits Dha and Ni (and the tanpura) better, though not Ga. Rejudging sessions 8 and 10 with the new defaults passes every real Ni attempt (now 15–24 c below just Ni), while the attempt where taar Sa was played still fails. An ear-training app shouldn't stop the player on a note their ear got right; intonation remains visible in each verdict and in the stats. Stored attempts keep the pass/fail they were judged with, so earlier sessions' summaries don't change.
 
 ## Open questions
 

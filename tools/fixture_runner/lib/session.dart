@@ -21,10 +21,15 @@ bool replaySession(NativeCore core, String logPath) {
   final recordStart = header['engineFrame'] as int;
   final saHz = (header['saHz'] as num).toDouble();
   final settings = header['settings'] as Map<String, dynamic>;
+  // Sessions recorded before D31 have neither key: they were judged in equal
+  // temperament, strictly.
+  final tuning = settings['tuning'] == 'just' ? Tuning.just : Tuning.equal;
   final judgeSettings = JudgeSettings(
     toleranceCents: (settings['toleranceCents'] as num).toDouble(),
     octaveMustMatch: settings['octaveMustMatch'] as bool,
+    tuning: tuning,
     sampleRate: sr,
+    strictIntonation: settings['strictIntonation'] as bool? ?? true,
   );
 
   // Frames on the engine clock, so they line up with the log.
@@ -41,7 +46,9 @@ bool replaySession(NativeCore core, String logPath) {
 
   stdout.writeln(
     '${header['flute']} · Sa ${saHz.toStringAsFixed(1)} Hz · '
-    '${wav.seconds.toStringAsFixed(0)} s of audio · tolerance ±${judgeSettings.toleranceCents} c\n',
+    '${wav.seconds.toStringAsFixed(0)} s of audio · tolerance ±${judgeSettings.toleranceCents} c · '
+    '${tuning == Tuning.just ? 'just' : 'equal'} tuning'
+    '${judgeSettings.strictIntonation ? ', strict' : ''}\n',
   );
   var agree = 0, total = 0;
   for (final e in events.where((e) => e['event'] == 'judge')) {
@@ -55,6 +62,7 @@ bool replaySession(NativeCore core, String logPath) {
     final notes = segmentNotes(
       heard,
       saHz: saHz,
+      tuning: tuning,
       config: SegmenterConfig(sampleRate: sr),
     );
     final target = parsePhrase(e['target'] as String).pitches;

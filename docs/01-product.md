@@ -19,7 +19,7 @@ Traditionally that someone is the guru. Aaroha does the repetitive part of that 
 
 1. **Relative to Sa, always.** Hindustani hearing is relative. Every note is heard against a tanpura drone and judged in cents from the flute's Sa.
 2. **First-try accuracy is the real score.** Hunting for the note is allowed and useful, but progress is measured by getting it right the first time.
-3. **Honest, specific feedback.** Not just pass/fail: "you played Ma, the note was Ga" is different from "right note, 30 cents flat".
+3. **Honest, specific feedback.** Not just pass/fail: "you played Ma, the note was Ga" is different from "right note, 30 cents flat". The ear comes first: by default the right swar passes the round, and being off in cents is reported and tracked, not failed (D31).
 4. **Real material over random notes.** Random notes are only the first rung. Alankars, raga phrases and compositions train the ear and teach reusable phrases.
 5. **Calm, riyaz-friendly UI.** Big, simple, usable with a flute in your hands. Few taps between rounds.
 6. **Offline and private.** No account, no network, audio never leaves the phone.
@@ -71,7 +71,8 @@ The user has several flutes. Each has a **profile** (name, nominal Sa, calibrate
 |---|---|---|
 | Pitch tolerance | ±25 cents | Per-session override |
 | Octave must match | On | Off = judge pitch class only (easier) |
-| Tuning | Equal temperament | Or just intonation; see 02 |
+| Tuning | Just intonation | Or equal temperament; see 02 and D31 |
+| Strict intonation | Off | Off: the right swar passes and its cents are shown. On: it must also be within tolerance (D31) |
 | Notation display | Shown | Shown / After attempt / Hidden |
 | Notation script | Latin (S R G) | Or Devanagari (सा रे ग) |
 | Drone | On, octave below Sa | Pa / Ma / Ni tuning per raga; volume |

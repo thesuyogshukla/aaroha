@@ -251,6 +251,7 @@ class PracticeController extends Notifier<PracticeState?> {
       start: _audio.time + (0.3 * sr).round(),
       sampleRate: sr,
       matraSeconds: single ? 1.6 : 0.8,
+      tuning: s.settings.tuning.tuning,
     );
     _audio.play(call.notes);
     final callSeconds = (call.end - call.notes.first.start) / sr;
@@ -340,6 +341,7 @@ class PracticeController extends Notifier<PracticeState?> {
     final notes = segmentNotes(
       _heard,
       saHz: state!.flute.saHz,
+      tuning: state!.settings.tuning.tuning,
       config: SegmenterConfig(sampleRate: sr),
     );
     final target = state!.round!.target;
@@ -361,6 +363,7 @@ class PracticeController extends Notifier<PracticeState?> {
     final notes = segmentNotes(
       _heard,
       saHz: s.flute.saHz,
+      tuning: s.settings.tuning.tuning,
       config: SegmenterConfig(sampleRate: sr),
     );
     final judge = s.settings.judge(sr);
