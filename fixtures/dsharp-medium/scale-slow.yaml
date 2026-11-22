@@ -1,0 +1,18 @@
+take: scale-slow
+flute: 'D# medium'
+recorded: 2026-11-02T21:15:37.142829
+seconds: 35.8
+sa_hz: 624.53
+sa_calibrated: true
+drone: false
+drone_volume: 0.50
+drone_first_string: pa
+drone_filter: true
+input_preset: unprocessed
+backend: AAudio
+device: 'V1UGS35H.75-14-9-3-1-4'
+phone: 'moto g45 5G'
+source_file: 'g45/dsharp-medium/scale-slow.wav'
+intended: ".P .D .N S R G m P D N S' R' G' m' P'"
+played: ".P .D .N S R G m P' D N S' R' G' G m G' P P' "
+notes: "Shuddha scale only. Madhya Pa is overblown: the taar Pa partial is 8-16 dB stronger than Pa itself (checked in the spectrum), so it reads as taar Pa. Taar Ga, Ma and Pa took several attempts, slipping down an octave; taar Ma ~77 c flat reads as taar Ga."

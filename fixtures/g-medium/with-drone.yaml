@@ -1,0 +1,18 @@
+take: with-drone
+flute: 'G medium'
+recorded: 2026-10-30T19:43:24.342849
+seconds: 26.5
+sa_hz: 391.35
+sa_calibrated: true
+drone: true
+drone_volume: 0.50
+drone_first_string: pa
+drone_filter: true
+input_preset: unprocessed
+backend: AAudio
+device: 'V1UGS35H.75-14-9-3-1-4'
+phone: 'moto g45 5G'
+source_file: 'g45/g-medium/with-drone.wav'
+intended: "S R G m P D N S'"
+played: "S R G g G m P D N S'"
+notes: "Ga sags about 60 c for 160 ms at 10.1 s and reads as komal Ga. Ga, Dha and Ni are 25-35 c flat."

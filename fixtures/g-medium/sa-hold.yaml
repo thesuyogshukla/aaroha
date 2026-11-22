@@ -1,0 +1,17 @@
+take: sa-hold
+flute: 'G medium'
+recorded: 2026-10-30T19:41:52.236115
+seconds: 8.6
+sa_hz: 391.35
+sa_calibrated: true
+drone: false
+drone_volume: 0.50
+drone_first_string: pa
+drone_filter: true
+input_preset: unprocessed
+backend: AAudio
+device: 'V1UGS35H.75-14-9-3-1-4'
+phone: 'moto g45 5G'
+source_file: 'g45/g-medium/sa-hold.wav'
+played: "S"
+notes: "Clean Sa hold."

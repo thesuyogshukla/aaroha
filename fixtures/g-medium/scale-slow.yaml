@@ -1,0 +1,18 @@
+take: scale-slow
+flute: 'G medium'
+recorded: 2026-10-30T22:02:25.581934
+seconds: 90.1
+sa_hz: 391.35
+sa_calibrated: true
+drone: false
+drone_volume: 0.50
+drone_first_string: pa
+drone_filter: true
+input_preset: unprocessed
+backend: AAudio
+device: 'V1UGS35H.75-14-9-3-1-4'
+phone: 'moto g45 5G'
+source_file: 'g45/g-medium/scale-slow.wav'
+intended: ".P .d .D .n .N S r R g G m M P d D n N S' r' R' g' G' m' M' P'"
+played: ".P .d .D .D .N S S r R g G m M P P D D N .N S' r' R' g' G' m' G' M' P'"
+notes: "Komal Ni is played 65-96 c flat in both octaves and reads as Dha. Komal Dha is barely sounded: after Pa the pitch slides up to ~-30 c of komal Dha while fading 20+ dB with confidence 0.7-0.88, then stops; since D29 that reads as a breath, not a note. At 57.9 s Ni drops to the lower octave as the breath runs out (checked in the spectrum). Taar Ma starts ~48 c flat, then sinks to ~72 c flat and reads as taar Ga."

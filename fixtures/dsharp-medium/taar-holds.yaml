@@ -1,0 +1,18 @@
+take: taar-holds
+flute: 'D# medium'
+recorded: 2026-11-02T21:16:11.399987
+seconds: 23.1
+sa_hz: 624.53
+sa_calibrated: true
+drone: false
+drone_volume: 0.50
+drone_first_string: pa
+drone_filter: true
+input_preset: unprocessed
+backend: AAudio
+device: 'V1UGS35H.75-14-9-3-1-4'
+phone: 'moto g45 5G'
+source_file: 'g45/dsharp-medium/taar-holds.wav'
+intended: "S' R' G' m' P'"
+played: "S' R' G G' m P P' P P' M'"
+notes: "Taar Ga, Ma and Pa took several attempts, the misses sounding in madhya. The last taar Pa is ~66 c flat and reads as taar tivra Ma."

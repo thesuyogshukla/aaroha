@@ -1,0 +1,18 @@
+take: phrases
+flute: 'G medium'
+recorded: 2026-10-30T22:13:26.366474
+seconds: 37.0
+sa_hz: 393.41
+sa_calibrated: true
+drone: false
+drone_volume: 0.50
+drone_first_string: pa
+drone_filter: true
+input_preset: unprocessed
+backend: AAudio
+device: 'V1UGS35H.75-14-9-3-1-4'
+phone: 'moto g45 5G'
+source_file: 'g45/g-medium/phrases-4.wav'
+intended: "S R G m P , P m G R S , S G R m G P , .N R G R S , S' N D P m G R S"
+played: "S R G m M R' P , P M G R S , S G R M G P , .N R G R S , S' N D P M G R S"
+notes: "Shuddha Ma is played 50-75 c sharp and reads as tivra Ma. At 5.7 s the move from Ma to Pa cracks to 870 Hz (taar Re) for 200 ms (checked in the spectrum). Pa's attack at 9.6 s cracks too (585 + 877 Hz) and is absorbed as an octave flip."

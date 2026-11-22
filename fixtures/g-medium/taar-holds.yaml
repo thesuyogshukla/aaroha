@@ -1,0 +1,18 @@
+take: taar-holds
+flute: 'G medium'
+recorded: 2026-10-30T22:03:08.714819
+seconds: 22.3
+sa_hz: 391.35
+sa_calibrated: true
+drone: false
+drone_volume: 0.50
+drone_first_string: pa
+drone_filter: true
+input_preset: unprocessed
+backend: AAudio
+device: 'V1UGS35H.75-14-9-3-1-4'
+phone: 'moto g45 5G'
+source_file: 'g45/g-medium/taar-holds.wav'
+intended: "S' R' G' m' P'"
+played: "S' R' G' m'"
+notes: "Taar Pa not played. Taar Re briefly splits between octaves at 8.2 s (absorbed as an octave flip)."

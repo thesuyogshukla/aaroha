@@ -1,0 +1,8 @@
+# Phrases for the `phrases` fixture take (docs/07).
+# Play each one at ~60 matras/min, one matra per note, with a pause between phrases.
+
+S R G m P
+P m G R S
+S G R m G P
+.N R G R S
+S' N D P m G R S

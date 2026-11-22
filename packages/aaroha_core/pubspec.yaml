@@ -1,0 +1,11 @@
+name: aaroha_core
+description: Pure Dart music model, notation and evaluation for Aaroha.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.10.0
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6

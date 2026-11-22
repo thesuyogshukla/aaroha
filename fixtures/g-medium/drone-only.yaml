@@ -1,0 +1,18 @@
+take: drone-only
+flute: 'G medium'
+recorded: 2026-10-30T19:42:38.092475
+seconds: 11.3
+sa_hz: 391.35
+sa_calibrated: true
+drone: true
+drone_volume: 0.50
+drone_first_string: pa
+drone_filter: true
+input_preset: unprocessed
+backend: AAudio
+device: 'V1UGS35H.75-14-9-3-1-4'
+# played: fill in the notes, docs/03 notation
+phone: 'moto g45 5G'
+source_file: 'g45/g-medium/drone-only.wav'
+played: ""
+notes: "Drone at volume 0.5, nothing played. Drone reaches the mic at about -40 dBFS, 13 dB below the flute notes in with-drone. Expect no notes."

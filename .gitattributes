@@ -1,0 +1,6 @@
+# Fixture recordings go through Git LFS (docs/07-test-fixtures.md).
+# Needs git-lfs installed: brew install git-lfs && git lfs install
+fixtures/**/*.wav filter=lfs diff=lfs merge=lfs -text
+
+# Vendored single-header library: don't diff or count it as ours.
+packages/aaroha_audio/src/third_party/** linguist-vendored -diff

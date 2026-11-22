@@ -1,0 +1,8 @@
+# Host build of the native core (tools/build_native_host.sh)
+/build/
+
+# macOS
+.DS_Store
+
+# Raw recordings pulled from the phone before they are labelled
+/fixtures/raw/

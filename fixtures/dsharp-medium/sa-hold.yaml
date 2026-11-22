@@ -1,0 +1,17 @@
+take: sa-hold
+flute: 'D# medium'
+recorded: 2026-11-02T21:08:17.122861
+seconds: 6.8
+sa_hz: 624.53
+sa_calibrated: true
+drone: false
+drone_volume: 0.50
+drone_first_string: pa
+drone_filter: true
+input_preset: unprocessed
+backend: AAudio
+device: 'V1UGS35H.75-14-9-3-1-4'
+phone: 'moto g45 5G'
+source_file: 'g45/dsharp-medium/sa-hold.wav'
+played: "S"
+notes: "Clean Sa hold, steady within ±4 c."

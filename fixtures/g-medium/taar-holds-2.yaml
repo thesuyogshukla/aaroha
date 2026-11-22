@@ -1,0 +1,18 @@
+take: taar-holds-2
+flute: 'G medium'
+recorded: 2026-10-30T22:10:13.039819
+seconds: 17.5
+sa_hz: 393.41
+sa_calibrated: true
+drone: false
+drone_volume: 0.50
+drone_first_string: pa
+drone_filter: true
+input_preset: unprocessed
+backend: AAudio
+device: 'V1UGS35H.75-14-9-3-1-4'
+phone: 'moto g45 5G'
+source_file: 'g45/g-medium/taar-holds-4.wav'
+intended: "S' R' G' m' P'"
+played: "S' R' G' G' P'"
+notes: "Taar Ma is played ~95 c flat and reads as taar Ga."
