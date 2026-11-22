@@ -76,6 +76,9 @@ As built: a *Your ear* screen (the chart icon on Home) shows right first time pe
 
 As built: *What the app plays* gains **Alankar** (with an alankar and a scale picker: a swar set or any raga) and **Raga** (a raga picker). A line above the target names what is practised ("Yaman · Pakad"); targets longer than 4 notes are drawn smaller; in Listen & name, the keypad offers the session's own swars. History names alankar and raga sessions. The 8 raga files are drafts awaiting the owner's review (each file's `notes` says what to check). See D36.
 
+### Phrase length that grows (added after D)
+- Phrases in every mode start at 2–4 notes and grow a note at a time as the player gets them right first time (docs/05 §9, D38). Asked for by the owner after the first raga sessions: longer phrases were hard to follow as a beginner.
+
 ### E. Pitch trace on the verdict
 - After an attempt, the player's pitch curve is drawn against the target notes, showing *how* a note was off: scooped attack, sagging tail, wavering, a crack.
 - Never shown live while playing: that would turn ear training into reading a tuner.

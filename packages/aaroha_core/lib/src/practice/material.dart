@@ -30,29 +30,38 @@ List<Pitch> scaleDegrees(
 }
 
 /// An alankar session: the pattern walked up, then down, in rounds of up to
-/// [maxNotes] notes (whole groups only; never mixing up and down).
+/// [maxNotes] notes (whole groups only, at least one; never mixing up and
+/// down).
 List<Drill> alankarRounds(Alankar alankar, List<Pitch> up, List<Pitch> down, {int maxNotes = 4}) {
   final walk = alankar.walk(up, down);
+  // As many whole groups per round as fit, spread evenly: 8 single notes
+  // in rounds of up to 6 are 4 + 4, not 6 + 2.
   List<Drill> chunk(List<List<Pitch>> groups, String label) {
-    final out = <Drill>[];
-    var current = <Pitch>[];
-    for (final g in groups) {
-      if (current.isNotEmpty && current.length + g.length > maxNotes) {
-        out.add((label: label, pitches: current));
-        current = [];
-      }
-      current = [...current, ...g];
-    }
-    if (current.isNotEmpty) out.add((label: label, pitches: current));
-    return out;
+    if (groups.isEmpty) return const [];
+    final perRound = math.max(1, maxNotes ~/ alankar.pattern.length);
+    final rounds = (groups.length / perRound).ceil();
+    return [
+      for (var k = 0; k < rounds; k++)
+        (
+          label: label,
+          pitches: [
+            for (final g in groups.sublist(
+              (k * groups.length / rounds).round(),
+              ((k + 1) * groups.length / rounds).round(),
+            ))
+              ...g,
+          ],
+        ),
+    ];
   }
 
   return [...chunk(walk.up, 'Aaroh'), ...chunk(walk.down, 'Avaroh')];
 }
 
-/// Splits [phrase] at its `,` breaks into pieces of up to [maxNotes] notes,
-/// joining neighbouring parts while they fit. A part longer than [maxNotes]
-/// with no break inside stays whole.
+/// Splits [phrase] into pieces of up to [maxNotes] notes. Parts between
+/// `,` breaks are joined while they fit. A part still longer than
+/// [maxNotes] is cut into near-equal pieces that share a note, so the line
+/// carries on: S R G P D S' in pieces of 4 is S R G P, then P D S'.
 List<List<Pitch>> splitAtBreaks(Phrase phrase, {int maxNotes = 8}) {
   final parts = <List<Pitch>>[];
   for (final n in phrase.sounding) {
@@ -64,16 +73,33 @@ List<List<Pitch>> splitAtBreaks(Phrase phrase, {int maxNotes = 8}) {
     if (out.isNotEmpty && out.last.length + part.length <= maxNotes) {
       out.last.addAll(part);
     } else {
-      out.add([...part]);
+      out.addAll(_cut(part, maxNotes));
     }
   }
   return out;
 }
 
-/// Raga practice: the aaroh, then the avaroh, then the raga's pakad and
-/// chalan phrases (and the aaroh and avaroh again) at random, never the same
-/// phrase twice in a row. Phrases longer than [maxNotes] are split at their
-/// breaks; phrases outside [low]..[high] are left out.
+/// [run] in near-equal overlapping pieces of up to [maxNotes] (at least 2).
+List<List<Pitch>> _cut(List<Pitch> run, int maxNotes) {
+  final max = math.max(2, maxNotes);
+  if (run.length <= max) return [List.of(run)];
+  final steps = run.length - 1;
+  final pieces = (steps / (max - 1)).ceil();
+  final out = <List<Pitch>>[];
+  var from = 0;
+  for (var k = 0; k < pieces; k++) {
+    final to = ((k + 1) * steps / pieces).round();
+    out.add(run.sublist(from, to + 1));
+    from = to;
+  }
+  return out;
+}
+
+/// Raga practice: the aaroh, then the avaroh (each piece in order), then the
+/// raga's pakad and chalan phrases (and the aaroh and avaroh again) at
+/// random, never the same phrase twice in a row. Phrases are cut to
+/// [maxNotes] with [splitAtBreaks]; phrases outside [low]..[high] are left
+/// out. [maxNotes] can change between rounds (the phrase level, docs/05 §9).
 class RagaDrill {
   RagaDrill(
     this.raga, {
@@ -82,12 +108,32 @@ class RagaDrill {
     Tuning tuning = Tuning.equal,
     int maxNotes = 8,
     math.Random? random,
-  }) : _random = random ?? math.Random() {
+  }) : _low = low,
+       _high = high,
+       _tuning = tuning,
+       _random = random ?? math.Random() {
+    this.maxNotes = maxNotes;
+  }
+
+  final Raga raga;
+  final Pitch _low, _high;
+  final Tuning _tuning;
+  final math.Random _random;
+  late List<Drill> pool;
+  late int _maxNotes;
+  int _opening = 0;
+  Drill? _last;
+
+  int get maxNotes => _maxNotes;
+  set maxNotes(int value) {
+    _maxNotes = value;
     List<Drill> drills(String label, Phrase p) => [
-      for (final ps in splitAtBreaks(p, maxNotes: maxNotes)) (label: label, pitches: ps),
+      for (final ps in splitAtBreaks(p, maxNotes: value)) (label: label, pitches: ps),
     ];
     bool fits(List<Pitch> ps) => ps.every(
-      (p) => tuning.centsOf(p) >= tuning.centsOf(low) && tuning.centsOf(p) <= tuning.centsOf(high),
+      (p) =>
+          _tuning.centsOf(p) >= _tuning.centsOf(_low) &&
+          _tuning.centsOf(p) <= _tuning.centsOf(_high),
     );
     pool = [
       ...drills('Aaroh', raga.aaroh),
@@ -98,27 +144,26 @@ class RagaDrill {
     if (pool.isEmpty) throw ArgumentError('no phrase of ${raga.name} fits the flute');
   }
 
-  final Raga raga;
-  late final List<Drill> pool;
-  final math.Random _random;
-  int _count = 0;
-  int? _last;
-
-  /// The aaroh and avaroh open the session, in order; then any phrase.
   Drill next() {
-    int i;
-    final opening = pool.indexWhere((d) => d.label == (_count == 0 ? 'Aaroh' : 'Avaroh'));
-    if (_count < 2 && opening >= 0 && opening != _last) {
-      i = opening;
-    } else if (pool.length == 1) {
-      i = 0;
-    } else {
-      do {
-        i = _random.nextInt(pool.length);
-      } while (i == _last);
+    final opening = [
+      for (final d in pool)
+        if (d.label == 'Aaroh' || d.label == 'Avaroh') d,
+    ];
+    if (_opening < opening.length) return _last = opening[_opening++];
+    if (pool.length == 1) return _last = pool.single;
+    Drill d;
+    var tries = 0;
+    do {
+      d = pool[_random.nextInt(pool.length)];
+    } while (_last != null && _samePitches(d.pitches, _last!.pitches) && ++tries < 50);
+    return _last = d;
+  }
+
+  static bool _samePitches(List<Pitch> a, List<Pitch> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
     }
-    _count++;
-    _last = i;
-    return pool[i];
+    return true;
   }
 }

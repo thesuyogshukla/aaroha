@@ -11,6 +11,7 @@ import '../audio/audio_service.dart';
 import '../data/content.dart';
 import '../data/database.dart';
 import '../data/history.dart';
+import '../data/phrase_level.dart';
 import '../data/providers.dart';
 import 'practice_settings.dart';
 import 'session_recorder.dart';
@@ -51,6 +52,7 @@ class PracticeState {
     this.answers = const [],
     this.keypad = const [],
     this.title,
+    this.phraseLevel,
   });
 
   final PracticePhase phase;
@@ -74,6 +76,9 @@ class PracticeState {
   /// What is being practised, in alankar and raga modes ("Yaman").
   final String? title;
 
+  /// The phrase level in use (docs/05 §9); null in single-swar practice.
+  final int? phraseLevel;
+
   RoundRecord? get round => rounds.isEmpty ? null : rounds.last;
   AttemptResult? get lastResult => round?.attempts.lastOrNull;
 
@@ -96,6 +101,7 @@ class PracticeState {
     answers: answers ?? this.answers,
     keypad: keypad,
     title: title,
+    phraseLevel: phraseLevel,
   );
 }
 
@@ -117,6 +123,12 @@ class PracticeController extends Notifier<PracticeState?> {
   final _answers = <Pitch>[];
   late Drill Function() _nextDrill;
   PracticeHistory? _history;
+
+  // Phrase length (docs/05 §9): the level in use, and its tracker when the
+  // level grows with the player (null when it's held).
+  int _level = 1;
+  PhraseLevelTracker? _levelTracker;
+  RagaDrill? _ragaDrill;
   int? _sessionId;
   SessionRecorder? _recorder;
 
@@ -156,6 +168,16 @@ class PracticeController extends Notifier<PracticeState?> {
     );
     // Smart drilling learns from every earlier first try (docs/05 §8).
     _history = settings.adaptive ? await loadPracticeHistory(_db) : null;
+    _levelTracker = null;
+    _ragaDrill = null;
+    if (settings.mode != PracticeMode.single) {
+      if (settings.phraseLevelGrows) {
+        _levelTracker = await loadPhraseLevel(_db, naming: settings.naming);
+        _level = _levelTracker!.level;
+      } else {
+        _level = settings.phraseLevel;
+      }
+    }
     final PracticeMaterial m;
     try {
       m = await _material(flute, settings);
@@ -173,6 +195,7 @@ class PracticeController extends Notifier<PracticeState?> {
       rounds: [],
       keypad: m.keypad,
       title: m.title,
+      phraseLevel: settings.mode == PracticeMode.single ? null : _level,
     );
     _audio.configureFor(flute.saHz);
     _audio.setDrone(
@@ -237,7 +260,15 @@ class PracticeController extends Notifier<PracticeState?> {
           pairs: history == null ? null : () => history.confusedPairs(),
         );
         final single = settings.mode == PracticeMode.single;
-        _nextDrill = () => (label: '', pitches: single ? targets.single() : targets.phrase());
+        _nextDrill = () => (
+          label: '',
+          pitches: single
+              ? targets.single()
+              : targets.phrase(
+                  minLength: PhraseLevel.minNotes(_level),
+                  maxLength: PhraseLevel.maxNotes(_level),
+                ),
+        );
         return (raga: null, rounds: null, keypad: pitches, title: null);
       case PracticeMode.alankar:
         final content = await ref.read(contentProvider.future);
@@ -248,7 +279,8 @@ class PracticeController extends Notifier<PracticeState?> {
             scaleDegrees(swars, settings.range, low: flute.low, high: flute.high, tuning: tuning);
         final up = degrees(raga?.aarohSwars ?? (set ?? SwarSet.shuddha).swars);
         final down = degrees(raga?.avarohSwars ?? (set ?? SwarSet.shuddha).swars);
-        final rounds = alankarRounds(alankar, up, down);
+        // The level at the start holds for the whole walk.
+        final rounds = alankarRounds(alankar, up, down, maxNotes: PhraseLevel.maxNotes(_level));
         if (rounds.isEmpty) throw StateError('This alankar does not fit the flute\'s range.');
         var i = 0;
         _nextDrill = () => rounds[i++ % rounds.length];
@@ -261,7 +293,13 @@ class PracticeController extends Notifier<PracticeState?> {
       case PracticeMode.raga:
         final content = await ref.read(contentProvider.future);
         final raga = content.raga(settings.ragaId) ?? content.ragas.first;
-        final drill = RagaDrill(raga, low: flute.low, high: flute.high, tuning: tuning);
+        final drill = _ragaDrill = RagaDrill(
+          raga,
+          low: flute.low,
+          high: flute.high,
+          tuning: tuning,
+          maxNotes: PhraseLevel.maxNotes(_level),
+        );
         _nextDrill = drill.next;
         return (
           raga: raga,
@@ -347,6 +385,7 @@ class PracticeController extends Notifier<PracticeState?> {
 
   Future<void> finish() async {
     _stopTimers();
+    ref.invalidate(phraseLevelProvider);
     _audio.stopPlayback();
     final id = _sessionId;
     if (id != null) {
@@ -599,6 +638,30 @@ class PracticeController extends Notifier<PracticeState?> {
   }
 
   /// Stores a judged attempt and decides what comes next (docs/08 M2-A).
+  /// A phrase round's first try moves the phrase level, when it grows.
+  Future<void> _countForLevel(bool passed) async {
+    final tracker = _levelTracker;
+    final s = state;
+    if (tracker == null || s == null) return;
+    final change = tracker.add(passed);
+    await savePhraseLevel(_db, tracker, naming: s.settings.naming);
+    if (change == 0) return;
+    _level = tracker.level;
+    _ragaDrill?.maxNotes = PhraseLevel.maxNotes(_level);
+    _recorder?.log('phraseLevel', {'level': _level, 'change': change});
+    state = PracticeState(
+      phase: s.phase,
+      flute: s.flute,
+      settings: s.settings,
+      rounds: s.rounds,
+      level: s.level,
+      answers: s.answers,
+      keypad: s.keypad,
+      title: s.title,
+      phraseLevel: _level,
+    );
+  }
+
   Future<void> _conclude(AttemptResult result) async {
     final s = state!;
     final round = s.round!;
@@ -614,6 +677,7 @@ class PracticeController extends Notifier<PracticeState?> {
         );
         if (o != null) _history?.add(o);
       }
+      if (round.target.length > 1) await _countForLevel(result.passed);
     }
     await _db
         .into(_db.attempts)

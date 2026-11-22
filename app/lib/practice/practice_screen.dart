@@ -37,6 +37,18 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   Widget build(BuildContext context) {
     final s = ref.watch(practiceProvider);
     final controller = ref.read(practiceProvider.notifier);
+    // Phrase length grew or eased off during the session (docs/05 §9).
+    ref.listen(practiceProvider.select((s) => s?.phraseLevel), (before, now) {
+      if (before == null || now == null || before == now) return;
+      final notes = '${PhraseLevel.minNotes(now)}–${PhraseLevel.maxNotes(now)} notes';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            now > before ? 'Nicely done: phrases now $notes' : 'Easing off: phrases now $notes',
+          ),
+        ),
+      );
+    });
     if (s == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     if (_shownRound != s.rounds.length) {
       _shownRound = s.rounds.length;

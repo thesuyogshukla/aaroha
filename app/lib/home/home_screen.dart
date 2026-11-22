@@ -4,6 +4,7 @@ import 'package:aaroha_core/aaroha_core.dart';
 
 import '../data/content.dart';
 import '../data/database.dart';
+import '../data/phrase_level.dart';
 import '../data/providers.dart';
 import '../debug/debug_screen.dart';
 import '../flutes/calibration_sheet.dart';
@@ -143,6 +144,9 @@ class _Options extends ConsumerWidget {
     void save(PracticeSettings s) => ref.read(practiceSettingsProvider.notifier).save(s);
     final theme = Theme.of(context);
     final content = ref.watch(contentProvider).value;
+    final grown = ref.watch(phraseLevelProvider(settings.naming)).value?.level ?? 1;
+    String notes(int level) =>
+        '${PhraseLevel.minNotes(level)}–${PhraseLevel.maxNotes(level)} notes';
 
     Widget dropdown(List<(String, String)> options, String selected, void Function(String) on) =>
         DropdownButton<String>(
@@ -203,6 +207,17 @@ class _Options extends ConsumerWidget {
             [for (final r in content.ragas) (r.id, r.name)],
             settings.ragaId,
             (v) => save(settings.copyWith(ragaId: v)),
+          ),
+        ],
+        if (settings.mode != PracticeMode.single) ...[
+          label('Phrase length'),
+          dropdown(
+            [
+              ('0', 'Grows with you · now ${notes(grown)}'),
+              for (var l = 1; l <= PhraseLevel.top; l++) ('$l', notes(l)),
+            ],
+            '${settings.phraseLevel}',
+            (v) => save(settings.copyWith(phraseLevel: int.parse(v))),
           ),
         ],
         if (settings.mode == PracticeMode.single || settings.mode == PracticeMode.phrase) ...[

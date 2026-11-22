@@ -143,6 +143,25 @@ Counts are over the swar's last 40 first tries (§7); a swar never practised cou
 
 **Contrast drills:** a confused pair is one seen at least twice recently (target → answered). 20% of targets are a contrast drill from the three most confused pairs within the allowed set: the two swars as two single rounds back to back, or, in phrase practice, as one two-note phrase. History loads when a session starts and each first try is added as it happens, so the session adapts as it goes. The *Focus on swars you miss* setting (on by default) turns all this off for plain random targets. Later: spaced repetition for phrases.
 
+## 9. Phrase length
+
+Phrases grow as the player gets them right (M2, after D). A **phrase level** sets how long phrases may be, in every phrase mode:
+
+| Level | Short phrase | Alankar and raga rounds |
+|---|---|---|
+| 1 | 2–4 notes | up to 4 |
+| 2 | 3–5 | up to 5 |
+| 3 | 4–6 | up to 6 |
+| 4 | 5–7 | up to 7 |
+| 5 | 6–8 | up to 8 |
+
+With *Phrase length: grows with you* (the default), every phrase round's first try counts. Once 10 rounds have been played at a level, the level goes **up** when at least 8 of the last 10 were right first time, and **down** (not below 1) when 4 or fewer were. After a change the count starts again. The level can change mid-session: the next phrase is generated at the new length, and a short notice says so. An alankar keeps the length it started with until its walk ends. Playing and naming each have their own level, since naming a phrase is easier than playing it back. A fixed level can be chosen instead; fixed-level sessions don't move the grown level.
+
+How each mode keeps to the length:
+- **Short phrase:** random walks of the level's length.
+- **Alankar:** as many whole groups per round as fit, spread evenly (8 notes at up to 6 are 4 + 4, not 6 + 2), at least one group.
+- **Raga:** parts between `,` breaks are joined while they fit. A part still too long is cut into near-equal pieces that **share a note**, so the line carries on: the Bhupali aaroh at up to 4 is `S R G P`, then `P D S'`. A session opens with every aaroh piece in order, then every avaroh piece.
+
 ## Defaults summary
 
 | Parameter | Default |

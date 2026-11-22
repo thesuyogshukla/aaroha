@@ -96,6 +96,7 @@ class PracticeSettings {
     this.alankarId = 'alankar-1',
     this.alankarScale = 'shuddha',
     this.ragaId = 'bhupali',
+    this.phraseLevel = 0,
   });
 
   final PracticeMode mode;
@@ -144,6 +145,12 @@ class PracticeSettings {
   /// Raga mode: which raga's phrases.
   final String ragaId;
 
+  /// How long phrases may be (docs/05 §9): 0 grows with the player's first
+  /// tries; 1–5 holds a level (2–4 notes up to 6–8).
+  final int phraseLevel;
+
+  bool get phraseLevelGrows => phraseLevel == 0;
+
   /// The raga whose drone and scale this session uses, if any.
   String? get ragaInUse => switch (mode) {
     PracticeMode.raga => ragaId,
@@ -183,6 +190,7 @@ class PracticeSettings {
     String? alankarId,
     String? alankarScale,
     String? ragaId,
+    int? phraseLevel,
   }) => PracticeSettings(
     mode: mode ?? this.mode,
     answerBy: answerBy ?? this.answerBy,
@@ -207,6 +215,7 @@ class PracticeSettings {
     alankarId: alankarId ?? this.alankarId,
     alankarScale: alankarScale ?? this.alankarScale,
     ragaId: ragaId ?? this.ragaId,
+    phraseLevel: phraseLevel ?? this.phraseLevel,
   );
 
   Map<String, dynamic> toJson() => {
@@ -233,6 +242,7 @@ class PracticeSettings {
     'alankarId': alankarId,
     'alankarScale': alankarScale,
     'ragaId': ragaId,
+    'phraseLevel': phraseLevel,
   };
 
   factory PracticeSettings.fromJson(Map<String, dynamic> j) {
@@ -270,6 +280,7 @@ class PracticeSettings {
       alankarId: j['alankarId'] as String? ?? d.alankarId,
       alankarScale: j['alankarScale'] as String? ?? d.alankarScale,
       ragaId: j['ragaId'] as String? ?? d.ragaId,
+      phraseLevel: ((j['phraseLevel'] as int?) ?? d.phraseLevel).clamp(0, PhraseLevel.top),
     );
   }
 }

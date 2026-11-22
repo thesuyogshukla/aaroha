@@ -40,7 +40,7 @@ As built (M2-D), `content/alankars/basic.yaml` has seven: Straight `[0]`, Pairs 
 
 `pattern` holds offsets in scale degrees from each starting degree. The generator walks the starting degree up the scale (aaroh) and mirrors the pattern on the way down (avaroh), stopping at the flute's range. Optional `rhythm` field later (e.g. `[1/2, 1/2]` per group).
 
-As built: the degrees are the scale's swars in the chosen saptaks plus the Sa above the top one, clipped to the flute's range. On a raga, the walk goes up the aaroh's swars and down the avaroh's. Only the notes that keep rising (or falling) between Sa and taar Sa count, so a vakra turn such as Des's `R G .N S` doesn't add Ni to the descent. Each round holds whole groups, up to 4 notes, and never mixes the way up with the way down. One walk up and down is the session, so the Rounds setting doesn't apply.
+As built: the degrees are the scale's swars in the chosen saptaks plus the Sa above the top one, clipped to the flute's range. On a raga, the walk goes up the aaroh's swars and down the avaroh's. Only the notes that keep rising (or falling) between Sa and taar Sa count, so a vakra turn such as Des's `R G .N S` doesn't add Ni to the descent. Each round holds whole groups, up to the phrase level's length (4 notes at level 1), spread evenly, and never mixes the way up with the way down. One walk up and down is the session, so the Rounds setting doesn't apply.
 
 ## Raga definitions
 
@@ -91,7 +91,7 @@ Chosen to cover common thaats and be easy to verify:
 | Khamaj | Both Ni |
 | Des | Common light-classical raga, different aaroh and avaroh |
 
-**Raga practice as built (M2-D):** a session opens with the aaroh, then the avaroh, then plays the pakad and chalan phrases (and the aaroh and avaroh again) at random, never the same phrase twice in a row. A phrase longer than 8 notes is split at its `,` breaks into pieces of up to 8. Phrases outside the flute's range are left out. The tanpura's first string follows the raga's `drone`, also when an alankar is walked on that raga.
+**Raga practice as built (M2-D):** a session opens with the aaroh, then the avaroh, then plays the pakad and chalan phrases (and the aaroh and avaroh again) at random, never the same phrase twice in a row. Phrases are cut to the phrase level's length (docs/05 §9): at its `,` breaks first, then into near-equal pieces that share a note. Phrases outside the flute's range are left out. The tanpura's first string follows the raga's `drone`, also when an alankar is walked on that raga.
 
 **Bundling:** Flutter only bundles assets inside the app's folder and silently skips `../` paths, so `app/content` is a symlink to this `content/` folder. Core tests read the files directly. Both parse every raga file, and the core tests check that each phrase fits a medium flute (mandra Pa to taar Pa).
 

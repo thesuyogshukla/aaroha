@@ -1,12 +1,17 @@
 import 'dart:convert';
 
 import 'package:aaroha/data/content.dart';
+import 'package:aaroha/data/database.dart';
+import 'package:aaroha/data/phrase_level.dart';
 import 'package:aaroha/practice/practice_settings.dart';
+import 'package:aaroha_core/aaroha_core.dart';
+import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  phraseLevelTests();
 
   test('the bundled content loads, ragas in starter order', () async {
     final content = await loadContent(rootBundle);
@@ -58,5 +63,29 @@ void main() {
       'alankar in Kafi · named',
     );
     expect(sessionLabel(jsonEncode({'mode': 'phrase'})), 'phrases');
+  });
+}
+
+void phraseLevelTests() {
+  test('phrase length grows by default and is saved with the settings', () {
+    expect(const PracticeSettings().phraseLevelGrows, isTrue);
+    final held = PracticeSettings.fromJson(const PracticeSettings(phraseLevel: 3).toJson());
+    expect(held.phraseLevel, 3);
+    expect(PracticeSettings.fromJson({'phraseLevel': 99}).phraseLevel, PhraseLevel.top);
+  });
+
+  test('the phrase level is stored apart for playing and naming', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    expect((await loadPhraseLevel(db, naming: false)).level, 1, reason: 'starts at 2–4 notes');
+    final t = PhraseLevelTracker();
+    for (var i = 0; i < 10; i++) {
+      t.add(true);
+    }
+    await savePhraseLevel(db, t, naming: false);
+    expect((await loadPhraseLevel(db, naming: false)).level, 2);
+    expect((await loadPhraseLevel(db, naming: true)).level, 1);
+    await db.setSetting('phrase_level_name', 'not json');
+    expect((await loadPhraseLevel(db, naming: true)).level, 1);
   });
 }
