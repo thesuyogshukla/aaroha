@@ -101,3 +101,7 @@ Float WAV at 48 kHz is about 11 MB per minute. Use **Git LFS** for `fixtures/**/
 ## Trace previews
 
 `dart run bin/fixture_runner.dart export <session.jsonl> <dir>` (in `tools/fixture_runner`) writes each attempt of a recorded session as JSON: settings, target and the tracker frames heard while listening. `AAROHA_TRACE_IN=<dir> AAROHA_TRACE_OUT=<dir> FLUTTER_ROOT=<flutter> flutter test test/trace_preview_test.dart` (in `app/`) judges them again and draws each session's pitch traces to a PNG sheet with the app's own widget. Useful for changing the trace without a phone.
+
+## Intonation from sessions
+
+`dart run bin/fixture_runner.dart intonation <session.jsonl>... [--csv <file>]` (in `tools/fixture_runner`) judges every recorded attempt again and measures each note played as the right swar. It reports the share within each tolerance (just and equal), where each swar sits and how much it moves, a line per session, and splits by first try, single swar or phrase, and note length. `--csv` writes one row per note. It is how the tolerance defaults were set (decisions.md D41).

@@ -154,9 +154,19 @@ The trace draws the segmenter's cleaned cents, not raw tracker frames. It is col
 The native WAV writer rewrites the header's sizes and flushes the file about once a second of audio, not only when recording stops. The session log is written line by line straight to the file, not through a buffered stream.
 **Why:** session 17 was cut off when the app closed mid-session. Its header still said 0 bytes, and its last log lines were never written. The host reader learned to read such a file to the end (D37), but other tools reject it. Once a second costs one small seek and write on the worker thread and loses at most a second of audio. A session writes a few log lines per round, so writing each one directly costs nothing noticeable and keeps the log complete up to the moment the app dies.
 
+### D41 — Tolerance defaults kept, from the owner's sessions (2026-11-23)
+The pitch tolerance stays at ±25 c by default, with ±35 and ±15 as the other choices. Just intonation stays the default reference. `fixture_runner intonation` measures every right-swar note in the recorded sessions, so this can be checked again as more sessions come in.
+**Why:** across 281 right-swar notes from 16 sessions (4–28, G medium), the share within each tolerance was:
+
+| | ±10 | ±15 | ±20 | ±25 | ±30 | ±35 |
+|---|---|---|---|---|---|---|
+| Just intonation | 49% | 70% | 84% | 91% | 95% | 98% |
+| Equal temperament | 47% | 65% | 74% | 85% | 93% | 96% |
+
+±25 passes nine notes in ten, and on S, R, P and D (the steadiest swars) 96%. What it flags is not scatter but steady habits: Ni about 15 c flat, taar Sa often 15–30 c flat, Ga about 14 c sharp of just (close to equal temperament), and in the early sessions a sharp Ma. Those are worth hearing about. ±35 flags only 6 notes in 281, so as a default it would say almost nothing. ±15 flags 30%, and 17% even on the steady swars, so it is a stretch goal, not a default. Shifts in the whole session (a cold flute, the day's Sa) add only a little: removing each session's offset from its Sa and Pa moves ±25 from 91% to 93%. Within a note the pitch holds within about ±3–7 c, so the tracker is not the limit. In phrases, only 61% of attempts had every note within ±25, so with strict intonation off (D31) the tolerance marks notes without failing rounds. Just intonation fits 6 points better than equal at ±25, mainly on Dha and Ni.
+
 ## Open questions
 
-- **Tolerance defaults by level:** ±35 / ±25 / ±15 cents is a guess; tune after a week of use.
 - **Medium-flute octave convention:** assumed Sa in the 4th–5th octave (docs/02). Calibration will confirm.
 - **Drone bleed:** measured on the moto g45 at drone volume 0.5: the drone reaches the mic about 13 dB below the flute, and the current drone filter handles it (fixtures `drone-only`, `with-drone`). Recheck if the owner practises with the drone much louder, or on another phone.
 - **Call loudness and end-of-attempt timings:** confirmed by the owner's first sessions (2026-11-20): phrase calls at 0.8 s per note felt fine to follow, and every phrase was judged 0.6 s after the last note with none cut off. Revisit for longer phrases (M2).
