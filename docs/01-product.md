@@ -78,6 +78,7 @@ The user has several flutes. Each has a **profile** (name, nominal Sa, calibrate
 | After a miss *(M2-A)* | Wait for me | Or *Try again automatically* after a 3-2-1 countdown |
 | Replay before retrying *(M2-A)* | On | Replay the call before an automatic retry, or just listen again |
 | Give up after *(M2-A)* | 3 misses | Reveal the answer and move on |
+| Focus on swars you miss *(M2-C)* | On | Swars you miss, haven't played lately, or confuse come up more often (docs/05 §8). Off: plain random targets |
 | After a miss, show *(M2-A)* | The answer | Or a hint ("a little / too / much too" low or high, per note for phrases), or nothing |
 | Notation script | Latin (S R G) | Or Devanagari (सा रे ग) |
 | Drone | On, octave below Sa | Pa / Ma / Ni tuning per raga; volume |

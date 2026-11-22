@@ -88,6 +88,7 @@ class PracticeSettings {
     this.replayBeforeRetry = true,
     this.giveUpAfter = 3,
     this.missReveal = MissReveal.answer,
+    this.adaptive = true,
   });
 
   final PracticeMode mode;
@@ -124,6 +125,10 @@ class PracticeSettings {
   final int giveUpAfter;
   final MissReveal missReveal;
 
+  /// Smart drilling: pick swars you miss more often, and contrast drills
+  /// for pairs you confuse (docs/05 §8).
+  final bool adaptive;
+
   JudgeSettings judge(int sampleRate) => JudgeSettings(
     toleranceCents: toleranceCents,
     octaveMustMatch: octaveMustMatch,
@@ -152,6 +157,7 @@ class PracticeSettings {
     bool? replayBeforeRetry,
     int? giveUpAfter,
     MissReveal? missReveal,
+    bool? adaptive,
   }) => PracticeSettings(
     mode: mode ?? this.mode,
     answerBy: answerBy ?? this.answerBy,
@@ -172,6 +178,7 @@ class PracticeSettings {
     replayBeforeRetry: replayBeforeRetry ?? this.replayBeforeRetry,
     giveUpAfter: giveUpAfter ?? this.giveUpAfter,
     missReveal: missReveal ?? this.missReveal,
+    adaptive: adaptive ?? this.adaptive,
   );
 
   Map<String, dynamic> toJson() => {
@@ -194,6 +201,7 @@ class PracticeSettings {
     'replayBeforeRetry': replayBeforeRetry,
     'giveUpAfter': giveUpAfter,
     'missReveal': missReveal.name,
+    'adaptive': adaptive,
   };
 
   factory PracticeSettings.fromJson(Map<String, dynamic> j) {
@@ -227,6 +235,7 @@ class PracticeSettings {
       replayBeforeRetry: j['replayBeforeRetry'] as bool? ?? d.replayBeforeRetry,
       giveUpAfter: j['giveUpAfter'] as int? ?? d.giveUpAfter,
       missReveal: byName(MissReveal.values, j['missReveal'], d.missReveal),
+      adaptive: j['adaptive'] as bool? ?? d.adaptive,
     );
   }
 }

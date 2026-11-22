@@ -53,6 +53,7 @@ After changing anything in `packages/aaroha_audio/src/`, rebuild the host librar
 - `home/` — home screen (flute, practice options, Start) and history
 - `flutes/` — flute profiles and the calibration sheet
 - `practice/` — practice settings, the round loop (`PracticeController`), practice screen, session summary
+- `stats/` — the *Your ear* screen (accuracy per swar, confusion grid, intonation); history loading is in `data/history.dart`
 - `debug/` — M0 test tools: live pitch readout and fixture recording
 - `widgets/` — sargam rendering
 

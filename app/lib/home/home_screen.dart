@@ -10,6 +10,7 @@ import '../flutes/flutes_screen.dart';
 import '../practice/practice_controller.dart';
 import '../practice/practice_screen.dart';
 import '../practice/practice_settings.dart';
+import '../stats/stats_screen.dart';
 import 'history_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -26,6 +27,11 @@ class HomeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Aaroha'),
         actions: [
+          IconButton(
+            tooltip: 'Your ear',
+            icon: const Icon(Icons.insights),
+            onPressed: () => open(const StatsScreen()),
+          ),
           IconButton(
             tooltip: 'History',
             icon: const Icon(Icons.history),
@@ -254,6 +260,15 @@ class _Options extends ConsumerWidget {
               ),
             ],
           ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Focus on swars you miss'),
+          subtitle: const Text(
+            'They come up more often, and confused pairs are sometimes played back to back',
+          ),
+          value: settings.adaptive,
+          onChanged: (v) => save(settings.copyWith(adaptive: v)),
+        ),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('Strict intonation'),

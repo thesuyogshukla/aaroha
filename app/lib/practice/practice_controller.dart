@@ -9,6 +9,7 @@ import 'package:aaroha_core/aaroha_core.dart';
 
 import '../audio/audio_service.dart';
 import '../data/database.dart';
+import '../data/history.dart';
 import '../data/providers.dart';
 import 'practice_settings.dart';
 import 'session_recorder.dart';
@@ -95,6 +96,7 @@ class PracticeController extends Notifier<PracticeState?> {
   Timer? _phaseTimer;
   final _answers = <Pitch>[];
   late TargetGenerator _targets;
+  PracticeHistory? _history;
   int? _sessionId;
   SessionRecorder? _recorder;
 
@@ -132,8 +134,12 @@ class PracticeController extends Notifier<PracticeState?> {
       settings: settings,
       rounds: [],
     );
+    // Smart drilling learns from every earlier first try (docs/05 §8).
+    final history = _history = settings.adaptive ? await loadPracticeHistory(_db) : null;
     _targets = TargetGenerator(
       practicePitches(settings.swarSet, settings.range, low: flute.low, high: flute.high),
+      weightOf: history?.weight,
+      pairs: history == null ? null : () => history.confusedPairs(),
     );
     _audio.configureFor(flute.saHz);
     _audio.setDrone(saHz: flute.saHz, volume: settings.droneVolume, on: settings.droneOn);
@@ -483,6 +489,19 @@ class PracticeController extends Notifier<PracticeState?> {
   Future<void> _conclude(AttemptResult result) async {
     final s = state!;
     final round = s.round!;
+    // First tries also teach this session's drilling as it goes.
+    if (round.attempts.length == 1) {
+      for (final note in attemptToJson(result)) {
+        final o = outcomeFromJson(
+          note,
+          tuning: s.settings.tuning.tuning,
+          at: DateTime.now(),
+          fluteId: s.flute.id,
+          named: s.settings.naming,
+        );
+        if (o != null) _history?.add(o);
+      }
+    }
     await _db
         .into(_db.attempts)
         .insert(

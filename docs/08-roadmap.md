@@ -67,6 +67,8 @@ Acceptance: a 20-round naming session takes under 5 minutes; confusions show up 
 - **Confusion grid** in stats (target × answered, first tries, both modes) and per-flute intonation (docs/05 §7).
 - **Adaptive targets** (docs/05 §8): weight swars and phrases by recent first-try errors; sometimes play a confused pair back to back as a contrast drill (e.g. Ga then Ma).
 
+As built: a *Your ear* screen (the chart icon on Home) shows right first time per swar, the *Heard as* grid and intonation on the selected flute. Targets are weighted by each swar's last 40 first tries with a floor and a "not seen lately" boost; one target in five is a contrast drill when a pair has been confused twice or more. A *Focus on swars you miss* switch (on) turns it off. See D35.
+
 ### D. Real material
 - **Alankars**: pattern definitions applied to any swar set (docs/06), walked up and down within the flute's range.
 - **Raga mode**: aaroh, avaroh, pakad and chalan phrases for 8 starter ragas: Bhupali, Yaman, Bilawal, Kafi, Bhairav, Durga, Khamaj, Des. Raga files live in `content/`, reviewed by the owner, with the drone's first string set per raga.

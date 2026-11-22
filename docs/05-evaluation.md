@@ -126,16 +126,20 @@ Recorded per attempt; computed from the `attempts` table.
 - **Intonation per flute:** for each flute and swar, mean and spread of the deviation in passing *and* out-of-tune attempts. If a swar is off on one flute but fine on the others, it's likely the flute's hole; if it's off on all of them, it's the player.
 - **Attempts to correct** and **time to correct** per round, as a secondary measure.
 
+As built (M2-C, *Your ear* screen): stats use each swar's **last 40 first tries**, from flute sessions and Listen & name alike, pooled across flutes (hearing is relative to Sa). A first try counts as right when the swar was right, in tune or not (D31); *missing* counts as a miss but not as a confusion, and out-of-tune right swars are not confusions; nor is a note 50 c or more off whose nearest allowed swar is still the target (a miss, not a mix-up). The screen shows right-first-time per swar, the *Heard as* grid (wrong swars and wrong octaves), and mean intonation per swar on the selected flute, in the current tuning, from flute attempts on the right swar only (tapped answers say nothing about intonation). Played cents are rebuilt from each stored deviation in that session's own tuning, so just and equal-tempered sessions line up. Extra notes in a phrase have no target and are left out.
+
 ## 8. Adaptive target picking
 
 When choosing the next target from the allowed set (single swar, or which phrase to drill):
 
 ```
-weight(item) = (errors + 1) / (firstTryAttempts + 2)        # smoothed error rate
-             × recencyBoost(item)                           # not seen recently → up
+weight(swar) = (0.15 + (misses + 1) / (firstTries + 2))      # smoothed miss rate, plus a floor
+             × (1 + min(daysSinceLastSeen / 7, 1))            # up to ×2 if not seen for a week
 ```
 
-Pick randomly in proportion to weight, never the same item twice in a row. For confused pairs, sometimes play the two swars back to back (a contrast drill). Later: spaced repetition for phrases.
+Counts are over the swar's last 40 first tries (§7); a swar never practised counts as unseen for a week. The floor keeps well-known swars coming up. Pick randomly in proportion to weight, never the same swar twice in a row. Phrases start from a weighted swar, then walk by steps as before.
+
+**Contrast drills:** a confused pair is one seen at least twice recently (target → answered). 20% of targets are a contrast drill from the three most confused pairs within the allowed set: the two swars as two single rounds back to back, or, in phrase practice, as one two-note phrase. History loads when a session starts and each first try is added as it happens, so the session adapts as it goes. The *Focus on swars you miss* setting (on by default) turns all this off for plain random targets. Later: spaced repetition for phrases.
 
 ## Defaults summary
 
