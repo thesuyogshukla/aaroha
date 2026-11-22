@@ -150,6 +150,10 @@ One phrase level, levels 1–5 (2–4 notes up to 6–8), applies to short phras
 The trace draws the segmenter's cleaned cents, not raw tracker frames. It is coloured by each note's verdict, against labelled target lanes with tolerance bands and a faint semitone grid. Its range covers the targets and judged notes, padded by 60 c and at least 400 c; stray frames outside the range are dropped. It shows only after a played attempt's verdict, only while the target may be shown, and it isn't stored. In the test tools, the live pitch widget is renamed `LivePitchTrace` to keep the names apart.
 **Why:** previews from the owner's sessions 23–28 drove each choice. Raw frames showed tracker octave slips as cracks that weren't there. Ranging over every voiced frame let a drone tail or breath before the first note squash the lanes into a strip, with a long grey line to the edge. A plain lane±60 c range made a single swar's ±10 c wobble fill the height, and its 50 c tolerance band filled most of the picture. Labelled lanes name the target's swars, so the trace follows the "show the target" rules and stays hidden when the verdict is a hint or nothing. The semitone grid gives a wrong note's distance without naming it.
 
+### D40 — Recordings survive a killed app (2026-11-22)
+The native WAV writer rewrites the header's sizes and flushes the file about once a second of audio, not only when recording stops. The session log is written line by line straight to the file, not through a buffered stream.
+**Why:** session 17 was cut off when the app closed mid-session. Its header still said 0 bytes, and its last log lines were never written. The host reader learned to read such a file to the end (D37), but other tools reject it. Once a second costs one small seek and write on the worker thread and loses at most a second of audio. A session writes a few log lines per round, so writing each one directly costs nothing noticeable and keeps the log complete up to the moment the app dies.
+
 ## Open questions
 
 - **Tolerance defaults by level:** ±35 / ±25 / ±15 cents is a guess; tune after a week of use.

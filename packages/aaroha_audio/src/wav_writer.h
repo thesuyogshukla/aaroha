@@ -1,5 +1,9 @@
 // Minimal 32-bit float mono WAV writer (WAVE_FORMAT_IEEE_FLOAT with a fact
 // chunk). Not realtime-safe: used from the analysis worker only.
+//
+// The header's sizes are rewritten and the file flushed about once a second,
+// so a recording cut off without close() (the app killed mid-session) is
+// still a valid WAV holding all but its last second.
 
 #ifndef AAROHA_WAV_WRITER_H
 #define AAROHA_WAV_WRITER_H
@@ -19,7 +23,9 @@ class WavWriter {
     if (!file_) return false;
     sample_rate_ = sample_rate;
     frames_ = 0;
+    synced_ = 0;
     write_header();
+    std::fflush(file_);
     return true;
   }
 
@@ -29,6 +35,7 @@ class WavWriter {
   void write(const float* samples, int64_t n) {
     if (!file_) return;
     frames_ += static_cast<int64_t>(std::fwrite(samples, sizeof(float), n, file_));
+    if (frames_ - synced_ >= sample_rate_) sync();
   }
 
   // Patches the header sizes and closes. Returns frames written.
@@ -42,6 +49,15 @@ class WavWriter {
   }
 
  private:
+  // Writes the sizes so far into the header and hands everything to the OS.
+  void sync() {
+    std::fseek(file_, 0, SEEK_SET);
+    write_header();
+    std::fseek(file_, 0, SEEK_END);
+    std::fflush(file_);
+    synced_ = frames_;
+  }
+
   void u32(uint32_t v) { std::fwrite(&v, 4, 1, file_); }
   void u16(uint16_t v) { std::fwrite(&v, 2, 1, file_); }
 
@@ -69,6 +85,7 @@ class WavWriter {
   std::FILE* file_ = nullptr;
   int sample_rate_ = 48000;
   int64_t frames_ = 0;
+  int64_t synced_ = 0;
 };
 
 }  // namespace aaroha

@@ -14,12 +14,16 @@ import '../audio/audio_service.dart';
 /// `recording` line's `engineFrame` is the engine frame of (roughly, within a
 /// few tens of ms) the WAV's first sample. Pausing closes a part; resuming
 /// starts the next one.
+///
+/// Both files stay readable if the app is killed mid-session: log lines go
+/// straight to the file (a few per round), and the native writer keeps the
+/// WAV header current to within a second.
 class SessionRecorder {
   SessionRecorder(this._audio);
 
   final AudioService _audio;
   String? _base;
-  IOSink? _log;
+  RandomAccessFile? _log;
   int _part = 0;
   Map<String, Object?> _header = const {};
 
@@ -47,7 +51,7 @@ class SessionRecorder {
     } on Object {
       return; // the session goes on without audio
     }
-    _log = File('$path.jsonl').openWrite();
+    _log = File('$path.jsonl').openSync(mode: FileMode.write);
     log('recording', {
       'part': _part,
       'engineFrame': _audio.time,
@@ -57,7 +61,7 @@ class SessionRecorder {
   }
 
   void log(String event, [Map<String, Object?> fields = const {}]) =>
-      _log?.writeln(jsonEncode({'event': event, 't': _audio.time, ...fields}));
+      _log?.writeStringSync('${jsonEncode({'event': event, 't': _audio.time, ...fields})}\n');
 
   Future<void> pause() async {
     final log = _log;
@@ -65,7 +69,7 @@ class SessionRecorder {
     this.log('paused');
     _log = null;
     _audio.stopRecording();
-    await log.close();
+    log.closeSync();
   }
 
   Future<void> stop() async {

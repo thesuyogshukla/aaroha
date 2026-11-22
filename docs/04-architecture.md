@@ -119,6 +119,8 @@ int         ar_analyze(const float* samples, int n, int sampleRate,
                        const ar_tracker_config*, ar_pitch_frame* out, int max);
 ```
 
+Recordings are written by the analysis worker, never the callback. The WAV header's sizes are rewritten about once a second, so a recording cut off by a killed app is still a valid file missing at most its last second (D40).
+
 ## aaroha_core (Dart)
 
 - **model:** `Swar`, `Saptak`, `Pitch`, `Tuning` (table-driven), `FluteProfile`, `Note`, `Phrase`.
