@@ -85,7 +85,7 @@ Dart **polls** rather than receiving callbacks: simpler and avoids calling into 
 
 - **Flute voice (v0.1, `flute_voice.cpp`):** sine fundamental + 2nd/3rd harmonics (0.22, 0.07) + breath noise, 40 ms attack and 60 ms release (shorter for short notes), no vibrato so the call is a clean reference. Meend glides exponentially over the second half of a note. Dart sends whole schedules (up to 128 `ar_note`s in engine frames) through a lock-free queue; the callback swaps them in. `ar_render_notes` renders offline, and the self-test checks the voice reads back within 2 c on every flute.
 - **Drone (v0.1):** synthesized plucked strings (Karplus–Strong with a buzzy bridge approximation), pattern per docs/02.
-- **Click/metronome (v0.3)**, **theka samples (v0.3)**.
+- **Click/metronome (v0.3)**, **tabla theka (v0.4, D42)**: sounds made by the app or recorded for it (CLAUDE.md rule 9).
 - Sounds are scheduled at an engine time, so a phrase plays sample-accurately, which the rhythm judging relies on.
 
 ### Pitch tracker

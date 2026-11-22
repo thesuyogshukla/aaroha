@@ -87,13 +87,52 @@ As built: the trace appears under the target once the verdict is in (docs/05 §1
 
 ## M3 — v0.3: rhythm
 
-- Durations in the notation (matras, holds, subdivisions).
-- Metronome; then tabla theka for keherwa, dadra, teentaal, rupak.
-- Output-to-input latency calibration.
-- Onset detection and timing scores (docs/05).
+Planned with the owner on 2026-11-23 (decisions.md D42). Built in this order; as in M2, each piece ends with a short real session before the next starts.
+
+Already done ahead of M3: the notation parser reads durations (holds `-`, rests `_`, several notes in a matra, vibhag bars, taal checks; docs/03). What is missing is everything after it. Practice turns a phrase into a plain list of swars, the call gives every note the same length (0.8 s), and the sargam display shows no rhythm.
+
+### A. Timed phrases, end to end
+- A practice target keeps its written timing from the content file to the call. The call plays it at a **tempo** in matras per minute. A phrase with no durations is one matra per note, so today's phrases sound the same at 75 per minute (single swars keep their longer note).
+- The sargam display draws rhythm the Bhatkhande way: holds as `ऽ` (or `-` in Latin), an arc under the notes that share a matra, vibhag bars.
+- Pitch judging doesn't change: the timing is heard and seen, not judged yet.
+- Mac: the call's schedule is unit-tested and the display is checked with PNG previews, as for the pitch trace. Phone: hear the calls.
+
+Acceptance: a phrase like `S - RG m | P - DP mG ||` plays and reads as written; existing modes sound as before.
+
+### B. Metronome and count-in
+- A click on every matra, accented on sam (the first matra) and lighter on khali, following the taal's vibhags (keherwa 4+4, dadra 3+3, teentaal 4×4, rupak 3+2+2). Without a taal it's a plain beat.
+- **How to start** is a setting with both options, as the owner asked: **count-in** (a bar of clicks before the call and before the response, so the player knows where the first matra falls) or **free start** (no count-in; the player's first note sets where the first matra falls, and the rest is judged from there). Both let rhythm be judged later (docs/05 §5).
+- Tempo and click volume are settings; the click plays alongside the drone.
+
+Acceptance: a 10-minute session with the metronome on, at a steady tempo, with no drift against the call.
+
+### C. Latency calibration
+- The app plays a few clicks and hears them back through the mic. The delay between the two is measured and stored per output. Only rhythm judging needs it (docs/04, Clock).
+- The **phone speaker** comes first: it is how the owner practises. Wired headphones follow (the click can't reach the mic through them, so they need another way to measure, or a typical value).
+- Bluetooth output is too slow and too variable to judge rhythm on. The app says so and turns rhythm judging off on it, rather than guessing.
+
+Acceptance: three calibrations in a row on the moto g45 speaker agree within 5 ms.
+
+### D. Onsets from the flute
+- Find where each played note starts. The pitch segmenter gives a rough onset; an energy-based detector (spectral flux) in the C++ core refines notes that start from silence or a tongued attack.
+- Repeated swars (`S S R R`) are split by articulation. This is today's weak spot (docs/05 §3), and rhythm depends on it.
+- New labelled fixtures: the owner plays known rhythms to the metronome at two tempos, including repeated swars. The detector is tuned on the Mac against these and against synthetic notes in the self-test.
+
+Acceptance: onsets within 30 ms of the labels on the new fixtures; repeated swars split correctly at least 9 times in 10.
+
+### E. Rhythm practice
+- A **Rhythm** mode: phrases with mixed note lengths in keherwa and dadra, then teentaal and rupak. Alankars gain rhythmic forms (for example `S- RG m- PD`).
+- Judging follows docs/05 §5: each note's onset against where it should fall, in fractions of a matra (±15% to start), and tempo drift reported as "rushing" or "dragging".
+- Ear-first, as with pitch (D31): timing is reported per note and does not fail the round. A **strict rhythm** switch (off by default) makes it count. Hints in the M2 style: "early", "late", "held too short". (The owner left this call to the build; reasons: the owner is a beginner, the ±15% tolerance is a guess until D's fixtures exist, and a verdict that fails on timing too early would bury the pitch feedback.)
+
+Acceptance: the owner can tell from a verdict which note was early or late, and agrees with it.
+
+### Questions for the owner
+Answered 2026-11-23: practice is mostly on the phone speaker (C); both count-in and free start (B); rhythm verdicts left to the build, so report-only first (E); the tabla theka moves to M4, and M3 practises to the metronome click.
 
 ## M4 — v0.4: depth
 
+- Tabla theka for keherwa, dadra, teentaal and rupak in place of the click (moved from M3, D42). Shipped sounds must be original or public domain (CLAUDE.md rule 9), so they are made by the app or recorded for it.
 - Generated raga phrases following each raga's rules.
 - Ornaments: kan and meend (notation + contour comparison).
 - User-entered tunes/compositions.
