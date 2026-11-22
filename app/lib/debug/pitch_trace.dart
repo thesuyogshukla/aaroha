@@ -3,8 +3,8 @@ import 'package:aaroha_core/aaroha_core.dart';
 
 /// Scrolling plot of cents from Sa, with a line for every shuddha swar from
 /// mandra Pa to taar Pa.
-class PitchTrace extends StatelessWidget {
-  const PitchTrace({super.key, required this.trace, required this.length});
+class LivePitchTrace extends StatelessWidget {
+  const LivePitchTrace({super.key, required this.trace, required this.length});
 
   final List<double?> trace;
   final int length;

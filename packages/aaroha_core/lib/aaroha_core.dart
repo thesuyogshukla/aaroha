@@ -6,6 +6,7 @@ export 'src/eval/hint.dart';
 export 'src/eval/judge.dart';
 export 'src/eval/pitch_frame.dart';
 export 'src/eval/segmenter.dart';
+export 'src/eval/trace.dart';
 export 'src/model/flute.dart';
 export 'src/model/fraction.dart';
 export 'src/model/phrase.dart';

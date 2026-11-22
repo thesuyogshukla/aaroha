@@ -29,6 +29,10 @@ class RoundRecord {
   /// What the target is, in alankar and raga practice ("Aaroh", "Pakad").
   final String? label;
   final attempts = <AttemptResult>[];
+
+  /// The pitch trace of each played attempt (docs/05 §10), shown after its
+  /// verdict. Empty when naming.
+  final traces = <PitchTrace>[];
   int? id;
 
   /// The player hit the give-up limit and the answer was revealed (M2-A).
@@ -591,6 +595,16 @@ class PracticeController extends Notifier<PracticeState?> {
     final result = round.target.length == 1
         ? judgeSingle(round.target.single, notes, judge)
         : judgePhrase(round.target, notes, judge);
+    round.traces.add(
+      buildPitchTrace(
+        _heard,
+        result,
+        round.target,
+        saHz: s.flute.saHz,
+        tuning: s.settings.tuning.tuning,
+        config: _segmenterConfig(s, sr),
+      ),
+    );
     round.attempts.add(result);
     state = s.copyWith(phase: PracticePhase.verdict, level: 0);
     _recorder?.log('judge', {

@@ -5,6 +5,7 @@
 //   dart run bin/fixture_runner.dart analyze <file.wav> [--sa <hz> | --flute "G medium"] [--highpass]
 //   dart run bin/fixture_runner.dart check [fixtures dir]
 //   dart run bin/fixture_runner.dart session <recordings/sessions/…-session-N.jsonl>
+//   dart run bin/fixture_runner.dart export <…-session-N.jsonl> <dir>   (attempts for trace previews)
 //
 // Exit code is non-zero when a required check fails.
 
@@ -13,6 +14,7 @@ import 'dart:math' as math;
 
 import 'package:fixture_runner/native.dart';
 import 'package:fixture_runner/session.dart';
+import 'package:fixture_runner/export.dart';
 import 'package:fixture_runner/synth.dart';
 import 'package:fixture_runner/wav.dart';
 import 'package:aaroha_core/aaroha_core.dart';
@@ -22,7 +24,10 @@ const sampleRate = 48000;
 
 void main(List<String> args) {
   if (args.isEmpty) {
-    stderr.writeln('usage: fixture_runner selftest | analyze <wav> [...] | check [dir]');
+    stderr.writeln(
+      'usage: fixture_runner selftest | analyze <wav> [...] | check [dir] | session <log.jsonl> '
+      '| export <log.jsonl> <dir>',
+    );
     exit(64);
   }
   final core = NativeCore.open();
@@ -31,6 +36,7 @@ void main(List<String> args) {
     'analyze' => analyze(core, args.skip(1).toList()),
     'check' => check(core, args.length > 1 ? args[1] : '${repoRoot()}/fixtures'),
     'session' => replaySession(core, args[1]),
+    'export' => exportAttempts(core, args[1], args[2]),
     _ => throw ArgumentError('unknown command ${args.first}'),
   };
   exit(ok ? 0 : 1);

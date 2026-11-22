@@ -97,6 +97,7 @@ class PracticeSettings {
     this.alankarScale = 'shuddha',
     this.ragaId = 'bhupali',
     this.phraseLevel = 0,
+    this.showTrace = true,
   });
 
   final PracticeMode mode;
@@ -151,6 +152,10 @@ class PracticeSettings {
 
   bool get phraseLevelGrows => phraseLevel == 0;
 
+  /// After each played try, draw the pitch curve against the target
+  /// (docs/05 §10). Never live.
+  final bool showTrace;
+
   /// The raga whose drone and scale this session uses, if any.
   String? get ragaInUse => switch (mode) {
     PracticeMode.raga => ragaId,
@@ -191,6 +196,7 @@ class PracticeSettings {
     String? alankarScale,
     String? ragaId,
     int? phraseLevel,
+    bool? showTrace,
   }) => PracticeSettings(
     mode: mode ?? this.mode,
     answerBy: answerBy ?? this.answerBy,
@@ -216,6 +222,7 @@ class PracticeSettings {
     alankarScale: alankarScale ?? this.alankarScale,
     ragaId: ragaId ?? this.ragaId,
     phraseLevel: phraseLevel ?? this.phraseLevel,
+    showTrace: showTrace ?? this.showTrace,
   );
 
   Map<String, dynamic> toJson() => {
@@ -243,6 +250,7 @@ class PracticeSettings {
     'alankarScale': alankarScale,
     'ragaId': ragaId,
     'phraseLevel': phraseLevel,
+    'showTrace': showTrace,
   };
 
   factory PracticeSettings.fromJson(Map<String, dynamic> j) {
@@ -281,6 +289,7 @@ class PracticeSettings {
       alankarScale: j['alankarScale'] as String? ?? d.alankarScale,
       ragaId: j['ragaId'] as String? ?? d.ragaId,
       phraseLevel: ((j['phraseLevel'] as int?) ?? d.phraseLevel).clamp(0, PhraseLevel.top),
+      showTrace: j['showTrace'] as bool? ?? d.showTrace,
     );
   }
 }

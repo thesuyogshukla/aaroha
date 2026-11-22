@@ -329,6 +329,15 @@ class _Options extends ConsumerWidget {
         ),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
+          title: const Text('Pitch trace after each try'),
+          subtitle: const Text(
+            'Your pitch curve against the target, once the verdict is in. Never while you play',
+          ),
+          value: settings.showTrace,
+          onChanged: (v) => save(settings.copyWith(showTrace: v)),
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
           title: const Text('Strict intonation'),
           subtitle: const Text(
             'Off: the right swar passes and the cents are shown. On: it must also be within the tolerance',

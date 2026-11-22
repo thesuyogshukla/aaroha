@@ -83,6 +83,8 @@ As built: *What the app plays* gains **Alankar** (with an alankar and a scale pi
 - After an attempt, the player's pitch curve is drawn against the target notes, showing *how* a note was off: scooped attack, sagging tail, wavering, a crack.
 - Never shown live while playing: that would turn ear training into reading a tuner.
 
+As built: the trace appears under the target once the verdict is in (docs/05 §10, D39), with a *Pitch trace after each try* switch (on). It was designed without the phone, from the owner's recorded sessions: `fixture_runner export` writes each attempt's frames, and `app/test/trace_preview_test.dart` draws them to PNG sheets with the app's own widget. Still to check on the phone: how it fits the verdict screen, and whether 1.5 s after a pass is long enough to read it.
+
 ## M3 — v0.3: rhythm
 
 - Durations in the notation (matras, holds, subdivisions).

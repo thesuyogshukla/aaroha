@@ -74,6 +74,14 @@ void phraseLevelTests() {
     expect(PracticeSettings.fromJson({'phraseLevel': 99}).phraseLevel, PhraseLevel.top);
   });
 
+  test('the pitch trace is on by default and saved with the settings', () {
+    expect(const PracticeSettings().showTrace, isTrue);
+    expect(
+      PracticeSettings.fromJson(const PracticeSettings(showTrace: false).toJson()).showTrace,
+      isFalse,
+    );
+  });
+
   test('the phrase level is stored apart for playing and naming', () async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);

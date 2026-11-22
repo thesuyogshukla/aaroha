@@ -158,7 +158,7 @@ List<DetectedNote> segmentNotes(
   Tuning tuning = Tuning.equal,
   SegmenterConfig config = const SegmenterConfig(),
 }) {
-  final cents = _cleanCents(frames, saHz, config);
+  final cents = cleanCents(frames, saHz, config);
 
   // Quantise and split into runs.
   final runs = <_Run>[];
@@ -326,7 +326,14 @@ List<DetectedNote> segmentNotes(
   ];
 }
 
-List<double?> _cleanCents(List<PitchFrame> frames, double saHz, SegmenterConfig config) {
+/// Cents from Sa per frame, as the segmenter sees them: null where the frame
+/// is unvoiced, unsure or too quiet; median-filtered; single-frame octave
+/// slips folded back. Also drawn as the pitch trace (docs/05 §10).
+List<double?> cleanCents(
+  List<PitchFrame> frames,
+  double saHz, [
+  SegmenterConfig config = const SegmenterConfig(),
+]) {
   final minRms = config.noiseFloor * config.loudnessFactor;
   final raw = <double?>[
     for (final f in frames)

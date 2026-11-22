@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aaroha_core/aaroha_core.dart';
 
+import '../widgets/pitch_trace.dart';
 import '../widgets/sargam.dart';
 import '../widgets/swar_keypad.dart';
 import 'practice_controller.dart';
@@ -106,7 +107,24 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                     const SizedBox(height: 12),
                     _answerSlots(context, s, size: 28),
                   ],
-                  const SizedBox(height: 32),
+                  if (_trace(s) case final trace?) ...[
+                    const SizedBox(height: 16),
+                    Expanded(
+                      flex: 4,
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 180),
+                          child: PitchTraceView(
+                            trace,
+                            script: s.settings.script,
+                            toleranceCents: s.settings.toleranceCents,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ] else
+                    const SizedBox(height: 32),
                   _phase(context, s),
                   const Spacer(),
                   if (round != null && s.settings.naming) ...[
@@ -126,6 +144,18 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         ),
       ),
     );
+  }
+
+  /// The last try's pitch trace, once judged: only when playing, with the
+  /// setting on, and while the target may be shown, since the lanes name its
+  /// swars (docs/05 §10).
+  PitchTrace? _trace(PracticeState s) {
+    final round = s.round;
+    if (round == null || s.settings.naming || !s.settings.showTrace) return null;
+    if (s.phase != PracticePhase.verdict || !_targetVisible(s)) return null;
+    if (round.traces.length != round.attempts.length || round.traces.isEmpty) return null;
+    final trace = round.traces.last;
+    return trace.isEmpty ? null : trace;
   }
 
   /// Whether the target's swars may be shown now (docs/08 M2-A).

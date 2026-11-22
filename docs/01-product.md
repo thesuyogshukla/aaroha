@@ -79,6 +79,7 @@ The user has several flutes. Each has a **profile** (name, nominal Sa, calibrate
 | Replay before retrying *(M2-A)* | On | Replay the call before an automatic retry, or just listen again |
 | Give up after *(M2-A)* | 3 misses | Reveal the answer and move on |
 | Phrase length *(M2)* | Grows with you | Starts at 2–4 notes and grows a note at a time (up to 6–8) as phrases come right first time; or a fixed level (docs/05 §9) |
+| Pitch trace after each try *(M2-E)* | On | Your pitch curve against the target after the verdict, never while playing (docs/05 §10) |
 | Focus on swars you miss *(M2-C)* | On | Swars you miss, haven't played lately, or confuse come up more often (docs/05 §8). Off: plain random targets |
 | After a miss, show *(M2-A)* | The answer | Or a hint ("a little / too / much too" low or high, per note for phrases), or nothing |
 | Notation script | Latin (S R G) | Or Devanagari (सा रे ग) |

@@ -162,6 +162,18 @@ How each mode keeps to the length:
 - **Alankar:** as many whole groups per round as fit, spread evenly (8 notes at up to 6 are 4 + 4, not 6 + 2), at least one group.
 - **Raga:** parts between `,` breaks are joined while they fit. A part still too long is cut into near-equal pieces that **share a note**, so the line carries on: the Bhupali aaroh at up to 4 is `S R G P`, then `P D S'`. A session opens with every aaroh piece in order, then every avaroh piece.
 
+## 10. Pitch trace
+
+After each played attempt's verdict, the player's pitch curve is drawn against the target (M2-E). It shows *how* a note was off: a scooped attack, a sagging tail, a wobble, a crack, a slide between notes. It is **never shown while playing**: that would turn ear training into reading a tuner.
+
+- **The curve** is the segmenter's cleaned pitch (`cleanCents`: median-filtered, single-frame octave slips folded back), so it shows what was judged and tracker glitches don't look like cracks. A gap in the playing breaks the line.
+- **Colour** follows the verdict of the note each stretch belongs to: in tune, right swar but out of tune, or wrong (extra notes too). Stretches between notes (slides, breaths) are grey.
+- **Lanes:** each target swar is a labelled line with its tolerance band, in the session's tuning. Faint lines at every semitone let a wrong note's distance be read without naming it.
+- **Range:** the target swars and the judged notes, padded by 60 c, and at least 400 c, so a single note's wobble isn't blown up. Stray frames outside it (a drone tail, a breath) are left out rather than stretching the scale.
+- **When:** only when playing (not naming), with *Pitch trace after each try* on (the default), and only while the target may be shown. The lanes name the target's swars, so a hint-only or hidden verdict shows no trace.
+
+The trace is kept in memory for the session; it is not stored.
+
 ## Defaults summary
 
 | Parameter | Default |

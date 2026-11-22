@@ -77,7 +77,7 @@ class _DebugScreenState extends ConsumerState<DebugScreen> {
               child: Card(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(8, 12, 12, 12),
-                  child: PitchTrace(trace: state.trace, length: traceFrames),
+                  child: LivePitchTrace(trace: state.trace, length: traceFrames),
                 ),
               ),
             ),
