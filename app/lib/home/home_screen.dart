@@ -228,6 +228,43 @@ class _Options extends ConsumerWidget {
             '${settings.tempo}',
             (v) => save(settings.copyWith(tempo: int.parse(v))),
           ),
+          if (!settings.naming) ...[
+            label('How you start'),
+            segments(
+              [(false, 'When ready'), (true, 'Count-in')],
+              settings.countIn,
+              (v) => save(settings.copyWith(countIn: v)),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Metronome'),
+              subtitle: const Text('A click on every matra of the call and your turn'),
+              value: settings.metronome,
+              onChanged: (v) => save(settings.copyWith(metronome: v)),
+            ),
+            if (settings.metronome || settings.countIn) ...[
+              label('Taal'),
+              dropdown(
+                [
+                  ('none', 'No taal · a plain beat'),
+                  for (final t in PracticeSettings.taals) (t.id, '${t.label} · ${t.shape}'),
+                ],
+                settings.taalId,
+                (v) => save(settings.copyWith(taalId: v)),
+              ),
+              Row(
+                children: [
+                  const Text('Click volume'),
+                  Expanded(
+                    child: Slider(
+                      value: settings.clickVolume,
+                      onChanged: (v) => save(settings.copyWith(clickVolume: v)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
         ],
         if (settings.mode == PracticeMode.single || settings.mode == PracticeMode.phrase) ...[
           label('Swars'),

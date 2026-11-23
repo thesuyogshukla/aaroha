@@ -99,6 +99,10 @@ class PracticeSettings {
     this.phraseLevel = 0,
     this.showTrace = true,
     this.tempo = 75,
+    this.metronome = false,
+    this.countIn = false,
+    this.taalId = 'none',
+    this.clickVolume = 0.6,
   });
 
   final PracticeMode mode;
@@ -164,6 +168,27 @@ class PracticeSettings {
   /// The tempos offered on Home, slow to brisk.
   static const tempos = [50, 60, 75, 90, 110];
 
+  /// A click on every matra of the call and of the player's turn (docs/08
+  /// M3-B). Played phrases only.
+  final bool metronome;
+
+  /// A count-in before the call and before the player's turn; off is a free
+  /// start, where the player begins when ready.
+  final bool countIn;
+
+  /// The taal the clicks follow, by id; 'none' is a plain beat.
+  final String taalId;
+  final double clickVolume;
+
+  Taal? get taal => taalId == 'none' ? null : Taal.byId(taalId);
+
+  /// The taals offered on Home (docs/08 M3).
+  static const taals = [Taal.keherwa, Taal.dadra, Taal.teentaal, Taal.rupak];
+
+  /// Whether this session clicks at all: played phrases, with the metronome
+  /// or a count-in on. A single swar and naming never click.
+  bool get clicks => !naming && mode != PracticeMode.single && (metronome || countIn);
+
   /// The raga whose drone and scale this session uses, if any.
   String? get ragaInUse => switch (mode) {
     PracticeMode.raga => ragaId,
@@ -206,6 +231,10 @@ class PracticeSettings {
     int? phraseLevel,
     bool? showTrace,
     int? tempo,
+    bool? metronome,
+    bool? countIn,
+    String? taalId,
+    double? clickVolume,
   }) => PracticeSettings(
     mode: mode ?? this.mode,
     answerBy: answerBy ?? this.answerBy,
@@ -233,6 +262,10 @@ class PracticeSettings {
     phraseLevel: phraseLevel ?? this.phraseLevel,
     showTrace: showTrace ?? this.showTrace,
     tempo: tempo ?? this.tempo,
+    metronome: metronome ?? this.metronome,
+    countIn: countIn ?? this.countIn,
+    taalId: taalId ?? this.taalId,
+    clickVolume: clickVolume ?? this.clickVolume,
   );
 
   Map<String, dynamic> toJson() => {
@@ -262,6 +295,10 @@ class PracticeSettings {
     'phraseLevel': phraseLevel,
     'showTrace': showTrace,
     'tempo': tempo,
+    'metronome': metronome,
+    'countIn': countIn,
+    'taal': taalId,
+    'clickVolume': clickVolume,
   };
 
   factory PracticeSettings.fromJson(Map<String, dynamic> j) {
@@ -302,6 +339,10 @@ class PracticeSettings {
       phraseLevel: ((j['phraseLevel'] as int?) ?? d.phraseLevel).clamp(0, PhraseLevel.top),
       showTrace: j['showTrace'] as bool? ?? d.showTrace,
       tempo: ((j['tempo'] as int?) ?? d.tempo).clamp(30, 200),
+      metronome: j['metronome'] as bool? ?? d.metronome,
+      countIn: j['countIn'] as bool? ?? d.countIn,
+      taalId: Taal.byId('${j['taal']}') != null ? '${j['taal']}' : d.taalId,
+      clickVolume: ((j['clickVolume'] as num?)?.toDouble() ?? d.clickVolume).clamp(0.0, 1.0),
     );
   }
 }

@@ -345,11 +345,19 @@ class PracticeController extends Notifier<PracticeState?> {
       state = state!.copyWith(phase: PracticePhase.answering, answers: const []);
       return;
     }
-    _listen(from: _audio.time + _frames100ms(1), seconds: 8);
+    final settings = state!.settings;
+    final matraSeconds = 60 / settings.tempo;
+    final countIn = settings.clicks && settings.countIn ? countInLength(settings.taal) : 0;
+    _listen(from: _audio.time + _frames100ms(1), seconds: 8 + countIn * matraSeconds);
+    final clicks = _startClicks(
+      origin: _audio.time + (0.3 * _audio.sampleRate).round(),
+      matraSeconds: matraSeconds,
+    );
     _recorder?.log('listen', {
       'round': state!.round!.number,
       'listenFrom': _listenFrom,
       'deadline': _deadline,
+      'clicks': ?clicks,
     });
   }
 
@@ -389,6 +397,7 @@ class PracticeController extends Notifier<PracticeState?> {
     if (s == null || s.phase == PracticePhase.finished) return;
     _stopTimers();
     _audio.stopPlayback();
+    _audio.stopClicks();
     _audio.stop();
     _recorder?.pause();
     state = s.copyWith(phase: PracticePhase.paused);
@@ -398,6 +407,7 @@ class PracticeController extends Notifier<PracticeState?> {
     _stopTimers();
     ref.invalidate(phraseLevelProvider);
     _audio.stopPlayback();
+    _audio.stopClicks();
     final id = _sessionId;
     if (id != null) {
       await (_db.update(
@@ -453,12 +463,16 @@ class PracticeController extends Notifier<PracticeState?> {
     final phrase = s.round!.phrase;
     final single = s.round!.target.length == 1;
     final sr = _audio.sampleRate;
+    final matraSeconds = single ? 1.6 : 60 / s.settings.tempo;
+    // With a count-in, the call waits for it (docs/08 M3-B).
+    final origin = _audio.time + (0.3 * sr).round();
+    final countIn = s.settings.clicks && s.settings.countIn ? countInLength(s.settings.taal) : 0;
     final call = scheduleCall(
       phrase,
       saHz: s.flute.saHz,
-      start: _audio.time + (0.3 * sr).round(),
+      start: origin + (countIn * matraSeconds * sr).round(),
       sampleRate: sr,
-      matraSeconds: single ? 1.6 : 60 / s.settings.tempo,
+      matraSeconds: matraSeconds,
       tuning: s.settings.tuning.tuning,
     );
     _audio.play(call.notes);
@@ -469,7 +483,12 @@ class PracticeController extends Notifier<PracticeState?> {
     _callMeasured = false;
     // The call reaches the mic one round trip late; listen once its echo has
     // passed (refined below when this call's own echo is measured).
-    _listen(from: _listenAfterCall(), seconds: callSeconds * 2 + 4);
+    _listen(from: _listenAfterCall(), seconds: callSeconds * 2 + 4 + countIn * matraSeconds);
+    final clicks = _startClicks(
+      origin: origin,
+      matraSeconds: matraSeconds,
+      callMatras: _wholeMatras(phrase.length),
+    );
     _recorder?.log('call', {
       'round': s.round!.number,
       'target': printNotation(phrase),
@@ -479,6 +498,7 @@ class PracticeController extends Notifier<PracticeState?> {
       'listenFrom': _listenFrom,
       'deadline': _deadline,
       'loopbackMs': _audio.loopbackMs.round(),
+      'clicks': ?clicks,
     });
     _answers.clear();
     state = s.copyWith(phase: PracticePhase.calling, answers: const []);
@@ -503,6 +523,58 @@ class PracticeController extends Notifier<PracticeState?> {
   }
 
   int _frames100ms(int n) => (n * 0.1 * _audio.sampleRate).round();
+
+  static int _wholeMatras(Fraction f) => f.isInteger ? f.numerator : f.floor() + 1;
+
+  /// Schedules this round's metronome and count-in clicks (docs/08 M3-B) on
+  /// the engine clock, the first at [origin], running to the end of the
+  /// listening window. [callMatras] null: listening again, no call. Returns
+  /// what to log, or null when the session doesn't click.
+  Map<String, Object?>? _startClicks({
+    required int origin,
+    required double matraSeconds,
+    int? callMatras,
+  }) {
+    final s = state!.settings;
+    if (!s.clicks) return null;
+    final sr = _audio.sampleRate;
+    final matraFrames = matraSeconds * sr;
+    RoundClicks plan(int responseMatras) => callMatras == null
+        ? retryClicks(
+            responseMatras: responseMatras,
+            taal: s.taal,
+            metronome: s.metronome,
+            countIn: s.countIn,
+          )
+        : roundClicks(
+            callMatras: callMatras,
+            responseMatras: responseMatras,
+            taal: s.taal,
+            metronome: s.metronome,
+            countIn: s.countIn,
+          );
+    final responseAt = origin + (plan(0).responseAt * matraFrames).round();
+    // Clicks until the window closes; the engine holds at most 256.
+    final responseMatras = ((_deadline - responseAt) / matraFrames).ceil().clamp(0, 200);
+    final p = plan(responseMatras);
+    final clicks = scheduleClicks(
+      p.clicks,
+      start: origin,
+      sampleRate: sr,
+      matraSeconds: matraSeconds,
+      volume: s.clickVolume,
+    );
+    _audio.playClicks(clicks);
+    return {
+      'taal': s.taalId,
+      'metronome': s.metronome,
+      'countIn': s.countIn,
+      'first': origin,
+      'callAt': origin + (p.callAt * matraFrames).round(),
+      'responseAt': origin + (p.responseAt * matraFrames).round(),
+      'count': clicks.length,
+    };
+  }
 
   int _listenAfterCall() =>
       _callEnd + _audio.loopbackFrames + (_afterEchoMs * _audio.sampleRate / 1000).round();
@@ -582,6 +654,7 @@ class PracticeController extends Notifier<PracticeState?> {
   );
 
   Future<void> _judge() async {
+    _audio.stopClicks();
     final s = state!;
     final round = s.round!;
     final sr = _audio.sampleRate;

@@ -108,6 +108,8 @@ As built: every round's target is now a timed phrase, from the material to the c
 
 Acceptance: a 10-minute session with the metronome on, at a steady tempo, with no drift against the call.
 
+As built (D44): Home gains, for played phrases, *How you start* (*When ready*, the free start, or *Count-in*), a *Metronome* switch, a *Taal* picker (no taal, keherwa, dadra, teentaal, rupak) and *Click volume*. All are off by default, so practice is unchanged until they're turned on. With a count-in, the call starts on sam after a count-in of the taal's last vibhag (at least 3 matras, 4 without a taal), and a second count-in leads into the player's turn, which starts on a new sam. With a free start, the metronome's cycle carries on from the call into the turn. Clicks are on the engine clock with the call, so they can't drift from it. Single swars and naming never click. The session log records where the clicks, the call and the turn fall, for rhythm judging later. Checked on the Mac: click plans per taal, clicks and call notes on the same frames, no drift over 200 matras, and the self-test and `clickcheck` above. Still to check on the phone: how the clicks sound and whether the accents read clearly on the speaker, the click level against the flute in the mic, and a 10-minute session.
+
 ### C. Latency calibration
 - The app plays a few clicks and hears them back through the mic. The delay between the two is measured and stored per output. Only rhythm judging needs it (docs/04, Clock).
 - The **phone speaker** comes first: it is how the owner practises. Wired headphones follow (the click can't reach the mic through them, so they need another way to measure, or a typical value).

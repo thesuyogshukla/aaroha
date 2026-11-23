@@ -4,8 +4,9 @@
 import 'dart:ffi';
 import 'dart:io';
 
-const arAbiVersion = 3;
+const arAbiVersion = 4;
 const arMaxSequenceNotes = 128;
+const arMaxClicks = 256;
 
 final class ArPitchFrame extends Struct {
   @Int64()
@@ -65,6 +66,15 @@ final class ArNote extends Struct {
   external double amplitude;
   @Float()
   external double reserved;
+}
+
+final class ArClick extends Struct {
+  @Int64()
+  external int time;
+  @Int32()
+  external int beat;
+  @Float()
+  external double amplitude;
 }
 
 final class ArEngine extends Opaque {}
@@ -150,6 +160,16 @@ class NativeBindings {
           .lookupFunction<Void Function(Pointer<ArEngine>), void Function(Pointer<ArEngine>)>(
             'ar_stop_playback',
           ),
+      sizeofClick = lib.lookupFunction<Int32 Function(), int Function()>('ar_sizeof_click'),
+      playClicks = lib
+          .lookupFunction<
+            Int32 Function(Pointer<ArEngine>, Pointer<ArClick>, Int32),
+            int Function(Pointer<ArEngine>, Pointer<ArClick>, int)
+          >('ar_play_clicks'),
+      stopClicks = lib
+          .lookupFunction<Void Function(Pointer<ArEngine>), void Function(Pointer<ArEngine>)>(
+            'ar_stop_clicks',
+          ),
       setCapture = lib
           .lookupFunction<
             Void Function(Pointer<ArEngine>, Int32),
@@ -176,6 +196,9 @@ class NativeBindings {
   final int Function() sizeofNote;
   final int Function(Pointer<ArEngine>, Pointer<ArNote>, int) playSequence;
   final void Function(Pointer<ArEngine>) stopPlayback;
+  final int Function() sizeofClick;
+  final int Function(Pointer<ArEngine>, Pointer<ArClick>, int) playClicks;
+  final void Function(Pointer<ArEngine>) stopClicks;
   final void Function(Pointer<ArEngine>, int) setCapture;
 
   /// Throws if the loaded library doesn't match these bindings.
@@ -183,6 +206,8 @@ class NativeBindings {
     final problems = <String>[
       if (abiVersion() != arAbiVersion) 'ABI version ${abiVersion()} != $arAbiVersion',
       if (sizeofNote() != sizeOf<ArNote>()) 'ar_note ${sizeofNote()} != ${sizeOf<ArNote>()} bytes',
+      if (sizeofClick() != sizeOf<ArClick>())
+        'ar_click ${sizeofClick()} != ${sizeOf<ArClick>()} bytes',
       if (sizeofPitchFrame() != sizeOf<ArPitchFrame>())
         'ar_pitch_frame ${sizeofPitchFrame()} != ${sizeOf<ArPitchFrame>()} bytes',
       if (sizeofTrackerConfig() != sizeOf<ArTrackerConfig>())

@@ -85,7 +85,8 @@ Dart **polls** rather than receiving callbacks: simpler and avoids calling into 
 
 - **Flute voice (v0.1, `flute_voice.cpp`):** sine fundamental + 2nd/3rd harmonics (0.22, 0.07) + breath noise, 40 ms attack and 60 ms release (shorter for short notes), no vibrato so the call is a clean reference. Meend glides exponentially over the second half of a note. Dart sends whole schedules (up to 128 `ar_note`s in engine frames) through a lock-free queue; the callback swaps them in. `ar_render_notes` renders offline, and the self-test checks the voice reads back within 2 c on every flute.
 - **Drone (v0.1):** synthesized plucked strings (Karplus–Strong with a buzzy bridge approximation), pattern per docs/02.
-- **Click/metronome (v0.3)**, **tabla theka (v0.4, D42)**: sounds made by the app or recorded for it (CLAUDE.md rule 9).
+- **Metronome clicks (v0.3, `click_voice.cpp`, D44):** a 45–80 ms burst of band-passed noise per matra. Sam is the loudest and brightest (3.2 kHz), tali a little softer (2.6 kHz), khali soft and dark (1.4 kHz), other matras short and plain (2.2 kHz). Noise, not a tone, so the pitch tracker finds no pitch in a click. Scheduled like the flute voice: whole schedules of up to 256 `ar_click`s in engine frames through a lock-free queue; a click more than 10 ms late is skipped rather than played late. `ar_render_clicks` renders offline for the self-test.
+- **Tabla theka (v0.4, D42):** sounds made by the app or recorded for it (CLAUDE.md rule 9).
 - Sounds are scheduled at an engine time, so a phrase plays sample-accurately, which the rhythm judging relies on.
 
 ### Pitch tracker
@@ -109,6 +110,8 @@ int         ar_engine_input_preset(ar_engine*);      // which preset actually ap
 void        ar_drone_set(ar_engine*, double saHz, int firstString, float volume, int on);
 int         ar_play_sequence(ar_engine*, const ar_note* notes, int count);  // absolute engine frames
 void        ar_stop_playback(ar_engine*);
+int         ar_play_clicks(ar_engine*, const ar_click* clicks, int count);  // metronome, engine frames
+void        ar_stop_clicks(ar_engine*);
 
 void        ar_capture_enable(ar_engine*, int on);    // turn-taking gate
 int         ar_read_pitch_frames(ar_engine*, ar_pitch_frame* out, int max);
@@ -117,6 +120,7 @@ void        ar_record_stop(ar_engine*);
 
 int         ar_analyze(const float* samples, int n, int sampleRate,
                        const ar_tracker_config*, ar_pitch_frame* out, int max);
+void        ar_render_notes(...), ar_render_drone(...), ar_render_clicks(...);  // offline, for the host
 ```
 
 Recordings are written by the analysis worker, never the callback. The WAV header's sizes are rewritten about once a second, so a recording cut off by a killed app is still a valid file missing at most its last second (D40).

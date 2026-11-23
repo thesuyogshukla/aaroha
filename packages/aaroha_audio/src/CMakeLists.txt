@@ -15,6 +15,7 @@ add_library(aaroha_audio SHARED
   "pitch_tracker.cpp"
   "drone.cpp"
   "flute_voice.cpp"
+  "click_voice.cpp"
   "miniaudio_impl.c"
 )
 

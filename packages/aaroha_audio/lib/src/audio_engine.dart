@@ -77,7 +77,8 @@ class AudioEngine {
     : _frameBuffer = calloc<ArPitchFrame>(_bufferFrames),
       _info = calloc<ArEngineInfo>(),
       _config = calloc<ArTrackerConfig>(),
-      _notes = calloc<ArNote>(arMaxSequenceNotes);
+      _notes = calloc<ArNote>(arMaxSequenceNotes),
+      _clicks = calloc<ArClick>(arMaxClicks);
 
   factory AudioEngine.create({int sampleRate = 48000, DynamicLibrary? library}) {
     final native = NativeBindings(library ?? openNativeLibrary())..checkAbi();
@@ -94,6 +95,7 @@ class AudioEngine {
   final Pointer<ArEngineInfo> _info;
   final Pointer<ArTrackerConfig> _config;
   final Pointer<ArNote> _notes;
+  final Pointer<ArClick> _clicks;
   bool _disposed = false;
 
   void start() {
@@ -115,7 +117,8 @@ class AudioEngine {
       ..free(_frameBuffer)
       ..free(_info)
       ..free(_config)
-      ..free(_notes);
+      ..free(_notes)
+      ..free(_clicks);
   }
 
   /// Engine frames processed since start.
@@ -194,6 +197,25 @@ class AudioEngine {
   }
 
   void stopPlayback() => _native.stopPlayback(_engine);
+
+  /// Schedules metronome clicks (replacing any scheduled); see
+  /// [scheduleClicks].
+  void playClicks(List<ScheduledClick> clicks) {
+    if (clicks.length > arMaxClicks) {
+      throw AudioEngineException('at most $arMaxClicks clicks at once');
+    }
+    for (var i = 0; i < clicks.length; i++) {
+      (_clicks + i).ref
+        ..time = clicks[i].time
+        ..beat = clicks[i].beat.index
+        ..amplitude = clicks[i].amplitude;
+    }
+    if (_native.playClicks(_engine, _clicks, clicks.length) != 0) {
+      throw AudioEngineException('click queue is full');
+    }
+  }
+
+  void stopClicks() => _native.stopClicks(_engine);
 
   /// Records the raw mic stream as 32-bit float mono WAV.
   void startRecording(String path) {

@@ -21,9 +21,10 @@ extern "C" {
 #endif
 
 // Bumped whenever a struct layout or function signature changes.
-#define AR_ABI_VERSION 3
+#define AR_ABI_VERSION 4
 
 #define AR_MAX_SEQUENCE_NOTES 128
+#define AR_MAX_CLICKS 256
 
 typedef struct ar_engine ar_engine;
 
@@ -54,6 +55,20 @@ typedef struct {
   float reserved;
 } ar_note;
 
+// A metronome click (docs/08 M3-B): how its matra is marked in the taal.
+enum {
+  AR_BEAT_SAM = 0,
+  AR_BEAT_TALI = 1,
+  AR_BEAT_KHALI = 2,
+  AR_BEAT_PLAIN = 3,
+};
+
+typedef struct {
+  int64_t time;     // engine frame
+  int32_t beat;     // AR_BEAT_*
+  float amplitude;  // 0..1
+} ar_click;
+
 enum {
   AR_PRESET_UNPROCESSED = 0,
   AR_PRESET_VOICE_RECOGNITION = 1,
@@ -82,6 +97,7 @@ AR_API int32_t ar_sizeof_pitch_frame(void);
 AR_API int32_t ar_sizeof_tracker_config(void);
 AR_API int32_t ar_sizeof_engine_info(void);
 AR_API int32_t ar_sizeof_note(void);
+AR_API int32_t ar_sizeof_click(void);
 AR_API void ar_tracker_default_config(ar_tracker_config* out);
 
 AR_API ar_engine* ar_engine_create(int32_t sample_rate);
@@ -105,6 +121,12 @@ AR_API void ar_tracker_set(ar_engine* engine, const ar_tracker_config* config);
 // there are more than AR_MAX_SEQUENCE_NOTES notes or the command queue is full.
 AR_API int32_t ar_play_sequence(ar_engine* engine, const ar_note* notes, int32_t count);
 AR_API void ar_stop_playback(ar_engine* engine);
+
+// Schedules metronome clicks, like ar_play_sequence: absolute engine frames,
+// sorted; replaces anything scheduled. Returns 0, or -1 if there are more
+// than AR_MAX_CLICKS clicks or the command queue is full.
+AR_API int32_t ar_play_clicks(ar_engine* engine, const ar_click* clicks, int32_t count);
+AR_API void ar_stop_clicks(ar_engine* engine);
 // Turn-taking gate: while off, captured audio is discarded.
 AR_API void ar_capture_enable(ar_engine* engine, int32_t on);
 // Pops up to max queued frames into out; returns how many were written.
@@ -126,6 +148,10 @@ AR_API int32_t ar_analyze(const float* samples, int64_t n, int32_t sample_rate,
 // Offline: renders the flute voice for notes timed from frame 0.
 AR_API void ar_render_notes(const ar_note* notes, int32_t count, int32_t sample_rate,
                             float* out, int64_t n);
+
+// Offline: renders clicks timed from frame 0.
+AR_API void ar_render_clicks(const ar_click* clicks, int32_t count, int32_t sample_rate,
+                             float* out, int64_t n);
 
 // Offline: renders n samples of drone, as the engine would play it.
 AR_API void ar_render_drone(double sa_hz, int32_t first_string, float volume,

@@ -65,3 +65,20 @@ Float32List mix(Float32List signal, Float32List other, double levelDb) {
     for (var i = 0; i < signal.length; i++) signal[i] + gain * other[i % other.length],
   ]);
 }
+
+double peak(Float32List x) {
+  var p = 0.0;
+  for (final v in x) {
+    if (v.abs() > p) p = v.abs();
+  }
+  return p;
+}
+
+/// [signal] + [other] scaled so that its peak is [levelDb] relative to the
+/// peak of [signal]: for sparse sounds like clicks, whose RMS says little.
+Float32List mixPeak(Float32List signal, Float32List other, double levelDb) {
+  final gain = peak(signal) / peak(other) * math.pow(10, levelDb / 20);
+  return Float32List.fromList([
+    for (var i = 0; i < signal.length; i++) signal[i] + gain * other[i % other.length],
+  ]);
+}

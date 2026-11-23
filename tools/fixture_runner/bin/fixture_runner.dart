@@ -6,6 +6,7 @@
 //   dart run bin/fixture_runner.dart check [fixtures dir]
 //   dart run bin/fixture_runner.dart session <recordings/sessions/…-session-N.jsonl>
 //   dart run bin/fixture_runner.dart export <…-session-N.jsonl> <dir>   (attempts for trace previews)
+//   dart run bin/fixture_runner.dart clickcheck [dir]   (the fixtures with metronome clicks mixed in)
 //   dart run bin/fixture_runner.dart intonation <…-session-N.jsonl>... [--csv <file>]
 //
 // Exit code is non-zero when a required check fails.
@@ -27,7 +28,8 @@ const sampleRate = 48000;
 void main(List<String> args) {
   if (args.isEmpty) {
     stderr.writeln(
-      'usage: fixture_runner selftest | analyze <wav> [...] | check [dir] | session <log.jsonl> '
+      'usage: fixture_runner selftest | analyze <wav> [...] | check [dir] | clickcheck [dir] | '
+      'session <log.jsonl> '
       '| export <log.jsonl> <dir> | intonation <log.jsonl>... [--csv <file>]',
     );
     exit(64);
@@ -37,6 +39,7 @@ void main(List<String> args) {
     'selftest' => selftest(core),
     'analyze' => analyze(core, args.skip(1).toList()),
     'check' => check(core, args.length > 1 ? args[1] : '${repoRoot()}/fixtures'),
+    'clickcheck' => clickCheck(core, args.length > 1 ? args[1] : '${repoRoot()}/fixtures'),
     'session' => replaySession(core, args[1]),
     'export' => exportAttempts(core, args[1], args[2]),
     'intonation' => intonationReport(core, [
@@ -173,6 +176,7 @@ bool selftest(NativeCore core) {
     }
   }
   if (!_voiceSelftest(core, targets)) allOk = false;
+  if (!_clickSelftest(core, targets, detunes)) allOk = false;
   stdout.writeln('\n${allOk ? 'All required checks passed.' : 'Some required checks FAILED.'}');
   return allOk;
 }
@@ -212,6 +216,81 @@ bool _voiceSelftest(NativeCore core, List<double> targets) {
       '  ${flute.name.padRight(11)} ${detected.length}/${expected.length} notes, '
       'worst ${worst.toStringAsFixed(2)} c  ${pass ? 'PASS' : 'FAIL'}',
     );
+  }
+  return ok;
+}
+
+/// A click track: one click every [matraSeconds], cycling through every
+/// kind of matra, from 50 ms in.
+List<(int, Beat)> _clickTrack(int length, double matraSeconds) => [
+  for (var k = 0; (0.05 + k * matraSeconds) * sampleRate < length; k++)
+    (((0.05 + k * matraSeconds) * sampleRate).round(), Beat.values[k % Beat.values.length]),
+];
+
+/// Metronome clicks (docs/08 M3-B) must never read as notes, and must not
+/// change what the tracker hears in the flute: alone at the fastest tempo
+/// offered, and over the synthetic notes at 75 matras a minute, from 12 dB
+/// below the flute's peak to 6 dB above it.
+bool _clickSelftest(NativeCore core, List<double> targets, List<double> detunes) {
+  stdout.writeln('\nMetronome clicks alone, 110 a minute, full level: no notes allowed');
+  var ok = true;
+  for (final flute in ownerFlutes) {
+    final sa = flute.nominalSaHz;
+    final length = 20 * sampleRate;
+    final audio = core.renderClicks(_clickTrack(length, 60 / 110), sampleRate, length);
+    final frames = core.analyze(
+      audio,
+      sampleRate,
+      highpassHz: highpassFor(sa),
+      minHz: minHzFor(sa),
+    );
+    final voiced = frames.where((f) => f.hz > 0 && f.confidence >= 0.85).length;
+    final notes = segmentNotes(frames, saHz: sa);
+    final pass = notes.isEmpty;
+    if (!pass) ok = false;
+    stdout.writeln(
+      '  ${flute.name.padRight(11)} ${notes.length} notes, $voiced voiced frames of '
+      '${frames.length}  ${pass ? 'PASS' : 'FAIL'}',
+    );
+  }
+
+  stdout.writeln(
+    '\nClicks over the synthetic notes, 75 a minute (level: click peak vs flute peak)',
+  );
+  final notes = [for (var i = 0; i < targets.length; i++) SynthNote(targets[i] + detunes[i])];
+  final expected = [for (final c in targets) Tuning.equal.nearest(c).pitch];
+  for (final level in [-12.0, -6.0, 0.0, 6.0]) {
+    for (final flute in ownerFlutes) {
+      final sa = flute.nominalSaHz;
+      final synth = synthesize(notes, sa, sampleRate);
+      final clicks = core.renderClicks(
+        _clickTrack(synth.samples.length, 0.8),
+        sampleRate,
+        synth.samples.length,
+      );
+      final samples = mixPeak(synth.samples, clicks, level);
+      final frames = core.analyze(
+        samples,
+        sampleRate,
+        highpassHz: highpassFor(sa),
+        minHz: minHzFor(sa),
+      );
+      final detected = segmentNotes(frames, saHz: sa);
+      final pairs = _align(expected, [for (final n in detected) n.pitch]);
+      final extra = detected.length - pairs.length;
+      final devErrors = [for (final (e, d) in pairs) (detected[d].deviation - detunes[e]).abs()];
+      final maxErr = devErrors.isEmpty ? double.nan : devErrors.reduce(math.max);
+      final pass = pairs.length == expected.length && extra == 0 && maxErr < 5;
+      if (!pass) ok = false;
+      stdout.writeln(
+        '  ${'${level >= 0 ? '+' : ''}${level.toStringAsFixed(0)} dB'.padRight(7)}'
+        '${flute.name.padRight(11)} ${pairs.length}/${expected.length} notes, +$extra, '
+        'dev err max ${maxErr.toStringAsFixed(1)} c  ${pass ? 'PASS' : 'FAIL'}',
+      );
+      if (!pass) {
+        stdout.writeln('      detected ${detected.map((n) => n.pitch).join(' ')}');
+      }
+    }
   }
   return ok;
 }
@@ -289,7 +368,19 @@ List<Pitch> _parsePlayed(String played) => [
       ),
 ];
 
-bool check(NativeCore core, String dir) {
+/// The labelled recordings again with metronome clicks mixed in at 75 a
+/// minute, at several levels against the flute's peak: clicks must not
+/// change a single note (docs/08 M3-B).
+bool clickCheck(NativeCore core, String dir) {
+  var ok = true;
+  for (final level in [-6.0, 0.0, 6.0]) {
+    stdout.writeln('\nClicks at ${level >= 0 ? '+' : ''}${level.toStringAsFixed(0)} dB:');
+    if (!check(core, dir, clicksDb: level)) ok = false;
+  }
+  return ok;
+}
+
+bool check(NativeCore core, String dir, {double? clicksDb}) {
   final labels = Directory(dir).existsSync()
       ? (Directory(dir)
             .listSync(recursive: true)
@@ -314,8 +405,19 @@ bool check(NativeCore core, String dir) {
     final wav = readWav(wavPath);
     final sa = _fixtureSa(core, label, yaml);
     final highpass = (yaml['drone_filter'] ?? yaml['drone']) == true;
+    final samples = clicksDb == null
+        ? wav.samples
+        : mixPeak(
+            wav.samples,
+            core.renderClicks(
+              _clickTrack(wav.samples.length, 0.8),
+              wav.sampleRate,
+              wav.samples.length,
+            ),
+            clicksDb,
+          );
     final frames = core.analyze(
-      wav.samples,
+      samples,
       wav.sampleRate,
       highpassHz: highpass ? highpassFor(sa) : 0,
       minHz: highpass ? minHzFor(sa) : null,

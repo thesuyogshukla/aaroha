@@ -1,5 +1,5 @@
 // Host-side bindings for the offline parts of the native core (ar_analyze,
-// ar_render_drone). The struct layouts mirror packages/aaroha_audio/src/aaroha_audio.h
+// ar_render_drone, ar_render_notes, ar_render_clicks). The struct layouts mirror packages/aaroha_audio/src/aaroha_audio.h
 // and are checked against the library at load time.
 
 import 'dart:ffi';
@@ -50,6 +50,15 @@ final class _Note extends Struct {
   external double amplitude;
   @Float()
   external double reserved;
+}
+
+final class _Click extends Struct {
+  @Int64()
+  external int time;
+  @Int32()
+  external int beat;
+  @Float()
+  external double amplitude;
 }
 
 /// A flute-voice note for offline rendering, in samples from 0.
@@ -105,7 +114,13 @@ class NativeCore {
           .lookupFunction<
             Void Function(Pointer<_Note>, Int32, Int32, Pointer<Float>, Int64),
             void Function(Pointer<_Note>, int, int, Pointer<Float>, int)
-          >('ar_render_notes');
+          >('ar_render_notes'),
+      _sizeofClick = lib.lookupFunction<Int32 Function(), int Function()>('ar_sizeof_click'),
+      _renderClicks = lib
+          .lookupFunction<
+            Void Function(Pointer<_Click>, Int32, Int32, Pointer<Float>, Int64),
+            void Function(Pointer<_Click>, int, int, Pointer<Float>, int)
+          >('ar_render_clicks');
 
   /// Opens build/native-host/libaaroha_audio.dylib (see tools/build_native_host.sh).
   factory NativeCore.open([String? path]) {
@@ -114,7 +129,8 @@ class NativeCore {
       throw StateError('$libPath not found. Run tools/build_native_host.sh first.');
     }
     final core = NativeCore._(DynamicLibrary.open(libPath));
-    if (core._abiVersion() != 3 ||
+    if (core._abiVersion() != 4 ||
+        core._sizeofClick() != sizeOf<_Click>() ||
         core._sizeofPitchFrame() != sizeOf<_PitchFrame>() ||
         core._sizeofTrackerConfig() != sizeOf<_TrackerConfig>() ||
         core._sizeofNote() != sizeOf<_Note>()) {
@@ -132,6 +148,33 @@ class NativeCore {
   final void Function(double, int, double, int, Pointer<Float>, int) _renderDrone;
   final int Function() _sizeofNote;
   final void Function(Pointer<_Note>, int, int, Pointer<Float>, int) _renderNotes;
+  final int Function() _sizeofClick;
+  final void Function(Pointer<_Click>, int, int, Pointer<Float>, int) _renderClicks;
+
+  /// The engine's metronome clicks: (sample, beat) pairs, beat as [Beat].
+  Float32List renderClicks(
+    List<(int, Beat)> clicks,
+    int sampleRate,
+    int length, {
+    double amplitude = 1,
+  }) {
+    final input = calloc<_Click>(clicks.length);
+    final out = calloc<Float>(length);
+    try {
+      for (var i = 0; i < clicks.length; i++) {
+        (input + i).ref
+          ..time = clicks[i].$1
+          ..beat = clicks[i].$2.index
+          ..amplitude = amplitude;
+      }
+      _renderClicks(input, clicks.length, sampleRate, out, length);
+      return Float32List.fromList(out.asTypedList(length));
+    } finally {
+      calloc
+        ..free(input)
+        ..free(out);
+    }
+  }
 
   /// The engine's flute voice playing [notes].
   Float32List renderNotes(List<VoiceNote> notes, int sampleRate, int length) {

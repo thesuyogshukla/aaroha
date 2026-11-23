@@ -94,6 +94,8 @@ The app fills `played:` with the notes the take asks for. If you played somethin
 
 The runner prints a table per fixture and exits non-zero on failure.
 
+`selftest` also checks the metronome (D44): clicks alone at 110 a minute must give no notes on any flute, and clicks over the synthetic notes, from 12 dB below the flute's peak to 6 dB above it, must leave every note and its cents unchanged. `clickcheck [dir]` runs `check` again with clicks mixed into the labelled recordings at −6, 0 and +6 dB. Known result: 33 of 36. The one difference is the D# `scale-slow` take's overblown madhya Pa, whose tracker confidence already hovers at the threshold; a click there stretches the weak patch past the 150 ms bridge and the note splits (D44).
+
 ## Storage
 
 Float WAV at 48 kHz is about 11 MB per minute. Use **Git LFS** for `fixtures/**/*.wav` from the start. Keep takes short.

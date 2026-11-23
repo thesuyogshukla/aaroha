@@ -128,6 +128,8 @@ class AudioService {
 
   void play(List<ScheduledNote> notes) => _engine?.play(notes);
   void stopPlayback() => _engine?.stopPlayback();
+  void playClicks(List<ScheduledClick> clicks) => _engine?.playClicks(clicks);
+  void stopClicks() => _engine?.stopClicks();
 
   void startRecording(String path) => _engine?.startRecording(path);
   int stopRecording() => _engine?.stopRecording() ?? 0;

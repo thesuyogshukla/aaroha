@@ -57,3 +57,31 @@ ScheduledCall scheduleCall(
   }
   return ScheduledCall(notes, start + frames(phrase.length));
 }
+
+/// One metronome click, in engine frames.
+class ScheduledClick {
+  const ScheduledClick({required this.time, required this.beat, this.amplitude = 0.6});
+
+  final int time;
+  final Beat beat;
+  final double amplitude;
+}
+
+/// Turns a round's [clicks] (docs/08 M3-B) into engine frames: the round's
+/// first matra at engine frame [start], [matraSeconds] per matra. Clicks
+/// fall on whole matras of the same clock as the call, so the two can't
+/// drift apart.
+List<ScheduledClick> scheduleClicks(
+  List<Click> clicks, {
+  required int start,
+  required int sampleRate,
+  required double matraSeconds,
+  double volume = 0.6,
+}) => [
+  for (final c in clicks)
+    ScheduledClick(
+      time: start + (c.matra * matraSeconds * sampleRate).round(),
+      beat: c.beat,
+      amplitude: volume,
+    ),
+];

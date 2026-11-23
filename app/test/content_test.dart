@@ -89,6 +89,25 @@ void phraseLevelTests() {
     expect(PracticeSettings.tempos, contains(const PracticeSettings().tempo));
   });
 
+  test('metronome settings: off by default, saved, and only for played phrases', () {
+    const d = PracticeSettings();
+    expect([d.metronome, d.countIn, d.taal, d.clicks], [false, false, null, false]);
+    final s = PracticeSettings.fromJson(
+      const PracticeSettings(
+        mode: PracticeMode.raga,
+        metronome: true,
+        countIn: true,
+        taalId: 'dadra',
+        clickVolume: 0.3,
+      ).toJson(),
+    );
+    expect([s.metronome, s.countIn, s.taal, s.clickVolume], [true, true, Taal.dadra, 0.3]);
+    expect(s.clicks, isTrue);
+    expect(s.copyWith(answerBy: AnswerBy.name).clicks, isFalse, reason: 'naming never clicks');
+    expect(s.copyWith(mode: PracticeMode.single).clicks, isFalse, reason: 'nor a single swar');
+    expect(PracticeSettings.fromJson({'taal': 'bogus'}).taal, isNull);
+  });
+
   test('the phrase level is stored apart for playing and naming', () async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);

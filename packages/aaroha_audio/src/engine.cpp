@@ -14,6 +14,7 @@
 #include <new>
 #include <thread>
 
+#include "click_voice.h"
 #include "drone.h"
 #include "flute_voice.h"
 #include "aaroha_audio.h"
@@ -34,6 +35,12 @@ struct SequenceCommand {
   ar_note notes[AR_MAX_SEQUENCE_NOTES];
 };
 
+// A whole click schedule; count < 0 means stop.
+struct ClickCommand {
+  int32_t count;
+  ar_click clicks[AR_MAX_CLICKS];
+};
+
 struct CaptureBlock {
   int64_t time;  // engine frame of samples[0]
   int32_t frames;
@@ -43,7 +50,7 @@ struct CaptureBlock {
 }  // namespace
 
 struct ar_engine {
-  explicit ar_engine(int rate) : sample_rate(rate), drone(rate), voice(rate) {
+  explicit ar_engine(int rate) : sample_rate(rate), drone(rate), voice(rate), clicks(rate) {
     ar_tracker_default_config(&tracker_config);
   }
 
@@ -68,6 +75,10 @@ struct ar_engine {
   // Flute voice schedules, written by Dart and picked up in the callback.
   SpscRing<SequenceCommand, 4> sequence_ring;
   aaroha::FluteVoice voice;
+
+  // Metronome click schedules, likewise.
+  SpscRing<ClickCommand, 4> click_ring;
+  aaroha::ClickVoice clicks;
 
   SpscRing<CaptureBlock, 256> capture_ring;    // ~5 s at 48 kHz
   SpscRing<ar_pitch_frame, 4096> pitch_ring;   // ~40 s at 100 frames/s
@@ -107,6 +118,15 @@ void data_callback(ma_device* device, void* output, const void* input,
       e->sequence_ring.commit_read();
     }
     e->voice.render_add(out, frame_count, now);
+    while (const ClickCommand* command = e->click_ring.read_slot()) {
+      if (command->count < 0) {
+        e->clicks.stop();
+      } else {
+        e->clicks.set_schedule(command->clicks, command->count);
+      }
+      e->click_ring.commit_read();
+    }
+    e->clicks.render_add(out, frame_count, now);
   }
 
   const auto* in = static_cast<const float*>(input);
@@ -211,6 +231,7 @@ int32_t ar_sizeof_pitch_frame(void) { return sizeof(ar_pitch_frame); }
 int32_t ar_sizeof_tracker_config(void) { return sizeof(ar_tracker_config); }
 int32_t ar_sizeof_engine_info(void) { return sizeof(ar_engine_info); }
 int32_t ar_sizeof_note(void) { return sizeof(ar_note); }
+int32_t ar_sizeof_click(void) { return sizeof(ar_click); }
 
 void ar_tracker_default_config(ar_tracker_config* out) {
   out->min_hz = 150.0f;
@@ -379,6 +400,35 @@ void ar_stop_playback(ar_engine* e) {
   if (!command) return;
   command->count = -1;
   e->sequence_ring.commit_write();
+}
+
+int32_t ar_play_clicks(ar_engine* e, const ar_click* clicks, int32_t count) {
+  if (!e || count < 0 || count > AR_MAX_CLICKS || (count > 0 && !clicks)) return -1;
+  ClickCommand* command = e->click_ring.write_slot();
+  if (!command) return -1;
+  command->count = count;
+  if (count > 0) std::memcpy(command->clicks, clicks, sizeof(ar_click) * count);
+  e->click_ring.commit_write();
+  return 0;
+}
+
+void ar_stop_clicks(ar_engine* e) {
+  if (!e) return;
+  ClickCommand* command = e->click_ring.write_slot();
+  if (!command) return;
+  command->count = -1;
+  e->click_ring.commit_write();
+}
+
+void ar_render_clicks(const ar_click* clicks, int32_t count, int32_t sample_rate, float* out,
+                      int64_t n) {
+  if (!out) return;
+  std::memset(out, 0, sizeof(float) * n);
+  auto* voice = new (std::nothrow) aaroha::ClickVoice(sample_rate);
+  if (!voice) return;
+  voice->set_schedule(clicks, count);
+  voice->render_add(out, n, 0);
+  delete voice;
 }
 
 void ar_render_notes(const ar_note* notes, int32_t count, int32_t sample_rate, float* out,
