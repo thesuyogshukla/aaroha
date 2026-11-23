@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:aaroha/audio/sound_delay.dart';
 import 'package:aaroha/data/content.dart';
 import 'package:aaroha/data/database.dart';
 import 'package:aaroha/data/phrase_level.dart';
@@ -106,6 +107,20 @@ void phraseLevelTests() {
     expect(s.copyWith(answerBy: AnswerBy.name).clicks, isFalse, reason: 'naming never clicks');
     expect(s.copyWith(mode: PracticeMode.single).clicks, isFalse, reason: 'nor a single swar');
     expect(PracticeSettings.fromJson({'taal': 'bogus'}).taal, isNull);
+  });
+
+  test('a sound delay is stored per output and read back', () {
+    final d = SoundDelay(
+      route: OutputRoute.speaker,
+      ms: 431.26,
+      spreadMs: 1.04,
+      measuredAt: DateTime(2026, 11, 23, 23, 5),
+    );
+    final back = SoundDelay.fromJson(OutputRoute.speaker, jsonEncode(d.toJson()))!;
+    expect([back.ms, back.spreadMs, back.measuredAt], [431.3, 1.0, DateTime(2026, 11, 23, 23, 5)]);
+    expect(SoundDelay.key(OutputRoute.bluetooth), 'sound_delay_bluetooth');
+    expect(SoundDelay.fromJson(OutputRoute.speaker, 'nonsense'), isNull);
+    expect(OutputRoute.values.where((r) => r.measurable), [OutputRoute.speaker]);
   });
 
   test('the phrase level is stored apart for playing and naming', () async {

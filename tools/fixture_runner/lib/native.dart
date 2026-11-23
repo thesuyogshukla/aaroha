@@ -129,7 +129,7 @@ class NativeCore {
       throw StateError('$libPath not found. Run tools/build_native_host.sh first.');
     }
     final core = NativeCore._(DynamicLibrary.open(libPath));
-    if (core._abiVersion() != 4 ||
+    if (core._abiVersion() != 5 ||
         core._sizeofClick() != sizeOf<_Click>() ||
         core._sizeofPitchFrame() != sizeOf<_PitchFrame>() ||
         core._sizeofTrackerConfig() != sizeOf<_TrackerConfig>() ||

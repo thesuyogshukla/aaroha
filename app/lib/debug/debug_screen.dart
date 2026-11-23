@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aaroha_audio/aaroha_audio.dart';
 import 'package:aaroha_core/aaroha_core.dart';
 
+import '../audio/sound_delay_tile.dart';
 import 'debug_controller.dart';
 import 'pitch_trace.dart';
 import 'takes.dart';
@@ -83,6 +84,10 @@ class _DebugScreenState extends ConsumerState<DebugScreen> {
             ),
             const SizedBox(height: 12),
             _DroneCard(state: state, controller: controller),
+            const SizedBox(height: 12),
+            const Card(
+              child: Padding(padding: EdgeInsets.fromLTRB(16, 4, 16, 12), child: SoundDelayTile()),
+            ),
             const SizedBox(height: 12),
             _RecordCard(state: state, controller: controller),
             const SizedBox(height: 12),

@@ -92,6 +92,7 @@ struct ar_engine {
 
   std::mutex record_mutex;
   aaroha::WavWriter recorder;
+  int64_t record_first = -1;  // engine frame of the recording's first sample
 };
 
 namespace {
@@ -186,7 +187,10 @@ void worker_loop(ar_engine* e) {
 
     {
       std::lock_guard<std::mutex> lock(e->record_mutex);
-      if (e->recorder.is_open()) e->recorder.write(block->samples, block->frames);
+      if (e->recorder.is_open()) {
+        if (e->record_first < 0) e->record_first = block->time;
+        e->recorder.write(block->samples, block->frames);
+      }
     }
     tracker.process(block->samples, block->frames, emit);
     e->capture_ring.commit_read();
@@ -356,7 +360,14 @@ int32_t ar_record_start(ar_engine* e, const char* wav_path) {
   if (!e || !wav_path) return -1;
   std::lock_guard<std::mutex> lock(e->record_mutex);
   if (e->recorder.is_open()) return -1;
+  e->record_first = -1;
   return e->recorder.open(wav_path, e->sample_rate) ? 0 : -1;
+}
+
+int64_t ar_record_first_frame(ar_engine* e) {
+  if (!e) return -1;
+  std::lock_guard<std::mutex> lock(e->record_mutex);
+  return e->record_first;
 }
 
 int64_t ar_record_stop(ar_engine* e) {

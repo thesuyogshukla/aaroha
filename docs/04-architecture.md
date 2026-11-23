@@ -71,6 +71,8 @@ Engine time = number of frames processed since the engine started (int64). Every
 
 The remaining unknown is the fixed delay between "sample written to output" and "same sound arrives in the input buffer" (output + input latency). Measured once per device/route by a loopback test (play clicks, detect them in the mic) and stored. Only rhythm scoring (v0.3) needs it.
 
+As built (M3-C, D45): the app records the mic while playing 6 metronome clicks a second apart, with the drone silenced. `ar_record_first_frame` gives the engine frame of the recording's first sample, so each click's scheduled frame is known within the recording. `measureLatency` in `aaroha_core` finds each click's onset (the first sharp rise in energy above 1 kHz that reaches within 20 dB of the loudest moment) and keeps the delay the clicks agree on. It is stored per output (`sound_delay_speaker`). On the moto g45's speaker it measures 422.7 ms, repeatable within 0.1 ms.
+
 ### Threads
 
 | Thread | Does | Rules |
@@ -117,6 +119,7 @@ void        ar_capture_enable(ar_engine*, int on);    // turn-taking gate
 int         ar_read_pitch_frames(ar_engine*, ar_pitch_frame* out, int max);
 int         ar_record_start(ar_engine*, const char* wavPath);   // raw fixture recording
 void        ar_record_stop(ar_engine*);
+int64_t     ar_record_first_frame(ar_engine*);   // engine frame of the recording's first sample
 
 int         ar_analyze(const float* samples, int n, int sampleRate,
                        const ar_tracker_config*, ar_pitch_frame* out, int max);

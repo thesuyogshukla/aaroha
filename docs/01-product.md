@@ -85,6 +85,7 @@ The user has several flutes. Each has a **profile** (name, nominal Sa, calibrate
 | Metronome *(M3-B)* | Off | A click on every matra of the call and your turn. Played phrases only |
 | Taal *(M3-B)* | No taal | Keherwa 4+4, Dadra 3+3, Teentaal 4+4+4+4 or Rupak 3+2+2: the clicks mark sam, tali and khali. Shown when the metronome or the count-in is on |
 | Click volume *(M3-B)* | 0.6 | |
+| Sound delay *(M3-C)* | Not measured | How long the phone's sound takes to come back through its mic, measured with 6 clicks and stored per output. Measurable on the phone speaker; headphones and Bluetooth are explained, not measured. Also in Test tools |
 | Focus on swars you miss *(M2-C)* | On | Swars you miss, haven't played lately, or confuse come up more often (docs/05 §8). Off: plain random targets |
 | After a miss, show *(M2-A)* | The answer | Or a hint ("a little / too / much too" low or high, per note for phrases), or nothing |
 | Notation script | Latin (S R G) | Or Devanagari (सा रे ग) |

@@ -134,6 +134,22 @@ class AudioService {
   void startRecording(String path) => _engine?.startRecording(path);
   int stopRecording() => _engine?.stopRecording() ?? 0;
 
+  /// The engine frame of the recording's first sample (null before any).
+  int? get recordingStart => _engine?.recordingStart;
+
+  /// Silences the drone without forgetting its settings (for measuring);
+  /// [quiet] false brings it back as it was.
+  void quietDrone(bool quiet) {
+    final d = _drone;
+    if (d == null) return;
+    _engine?.setDrone(
+      saHz: d.saHz,
+      firstString: d.firstString,
+      volume: d.volume,
+      on: d.on && !quiet,
+    );
+  }
+
   void dispose() {
     stop();
     _engine?.dispose();

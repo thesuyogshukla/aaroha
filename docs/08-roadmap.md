@@ -117,6 +117,8 @@ As built (D44): Home gains, for played phrases, *How you start* (*When ready*, t
 
 Acceptance: three calibrations in a row on the moto g45 speaker agree within 5 ms.
 
+As built (D45): a *Sound delay* row under the rhythm settings on Home (when the metronome or count-in is on) and in Test tools shows the current output and its stored delay, with *Measure*. A measurement plays 6 clicks a second apart with the drone silenced, records the mic, and finds each click. It is saved only when at least 5 clicks are heard and agree within 5 ms. Headphones and Bluetooth are detected through Android's audio devices and explained rather than measured. On the moto g45 speaker: 422.8, 422.8 and 422.7 ms in three runs from a stopped engine, each run's clicks within 0.2 ms. The older echo-based estimate the app uses to time its listening (D28) was 421 ms, so the two agree. Not yet used: rhythm judging (E) will subtract it from played onsets.
+
 ### D. Onsets from the flute
 - Find where each played note starts. The pitch segmenter gives a rough onset; an energy-based detector (spectral flux) in the C++ core refines notes that start from silence or a tongued attack.
 - Repeated swars (`S S R R`) are split by articulation. This is today's weak spot (docs/05 §3), and rhythm depends on it.

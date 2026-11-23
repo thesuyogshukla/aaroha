@@ -108,6 +108,10 @@ Float WAV at 48 kHz is about 11 MB per minute. Use **Git LFS** for `fixtures/**/
 
 `AAROHA_NOTATION_OUT=<file.png> FLUTTER_ROOT=<flutter> flutter test test/notation_preview_test.dart` (in `app/`) draws a sheet of timed phrases with the app's sargam widget: Latin on a light theme beside Devanagari on a dark one, plus verdict colours. Useful for changing how rhythm is drawn without a phone (docs/03, Rendering).
 
+## Sound delay takes
+
+With *Save session audio* on, each sound delay measurement keeps its recording and what was played as `recordings/delay/delay-<time>.wav` and `.json` on the phone. `dart run bin/fixture_runner.dart delay <json>...` (in `tools/fixture_runner`) measures them again on the Mac and prints each click's delay. The self-test also checks the measurement on the engine's own clicks, delayed through a simulated room with the drone playing.
+
 ## Intonation from sessions
 
 `dart run bin/fixture_runner.dart intonation <session.jsonl>... [--csv <file>]` (in `tools/fixture_runner`) judges every recorded attempt again and measures each note played as the right swar. It reports the share within each tolerance (just and equal), where each swar sits and how much it moves, a line per session, and splits by first try, single swar or phrase, and note length. `--csv` writes one row per note. It is how the tolerance defaults were set (decisions.md D41).

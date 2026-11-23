@@ -48,7 +48,7 @@ After changing anything in `packages/aaroha_audio/src/`, rebuild the host librar
 
 ## App structure (`app/lib`)
 
-- `audio/` — `AudioService` (the one native engine, shared by every screen) and `SaCalibrator`
+- `audio/` — `AudioService` (the one native engine, shared by every screen), `SaCalibrator`, and the sound delay measurement (`sound_delay.dart`, with the output detection through the `aaroha/audio_route` channel in `MainActivity.kt`)
 - `data/` — drift database (flutes, sessions, rounds, attempts, settings), Riverpod providers, and the bundled content loader (`content.dart`; `app/content` is a symlink to the repo's `content/`)
 - `home/` — home screen (flute, practice options, Start) and history
 - `flutes/` — flute profiles and the calibration sheet

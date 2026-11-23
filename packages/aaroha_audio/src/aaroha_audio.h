@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 // Bumped whenever a struct layout or function signature changes.
-#define AR_ABI_VERSION 4
+#define AR_ABI_VERSION 5
 
 #define AR_MAX_SEQUENCE_NOTES 128
 #define AR_MAX_CLICKS 256
@@ -138,6 +138,9 @@ AR_API int32_t ar_read_pitch_frames(ar_engine* engine, ar_pitch_frame* out,
 AR_API int32_t ar_record_start(ar_engine* engine, const char* wav_path);
 // Returns the number of frames written.
 AR_API int64_t ar_record_stop(ar_engine* engine);
+// The engine frame of the current (or last) recording's first sample, or -1
+// before any audio was written. Lines a recording up with scheduled sounds.
+AR_API int64_t ar_record_first_frame(ar_engine* engine);
 
 // Offline: runs the same tracker over a buffer. Frame times are sample
 // indices. Returns the number of frames written to out (at most max).

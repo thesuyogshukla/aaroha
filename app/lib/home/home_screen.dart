@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aaroha_core/aaroha_core.dart';
 
+import '../audio/sound_delay_tile.dart';
 import '../data/content.dart';
 import '../data/database.dart';
 import '../data/phrase_level.dart';
@@ -263,6 +264,7 @@ class _Options extends ConsumerWidget {
                   ),
                 ],
               ),
+              const SoundDelayTile(),
             ],
           ],
         ],

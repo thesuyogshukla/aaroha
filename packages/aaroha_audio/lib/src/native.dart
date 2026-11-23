@@ -4,7 +4,7 @@
 import 'dart:ffi';
 import 'dart:io';
 
-const arAbiVersion = 4;
+const arAbiVersion = 5;
 const arMaxSequenceNotes = 128;
 const arMaxClicks = 256;
 
@@ -150,6 +150,10 @@ class NativeBindings {
           .lookupFunction<Int64 Function(Pointer<ArEngine>), int Function(Pointer<ArEngine>)>(
             'ar_record_stop',
           ),
+      recordFirstFrame = lib
+          .lookupFunction<Int64 Function(Pointer<ArEngine>), int Function(Pointer<ArEngine>)>(
+            'ar_record_first_frame',
+          ),
       sizeofNote = lib.lookupFunction<Int32 Function(), int Function()>('ar_sizeof_note'),
       playSequence = lib
           .lookupFunction<
@@ -193,6 +197,7 @@ class NativeBindings {
   final int Function(Pointer<ArEngine>, Pointer<ArPitchFrame>, int) readPitchFrames;
   final int Function(Pointer<ArEngine>, Pointer<Char>) recordStart;
   final int Function(Pointer<ArEngine>) recordStop;
+  final int Function(Pointer<ArEngine>) recordFirstFrame;
   final int Function() sizeofNote;
   final int Function(Pointer<ArEngine>, Pointer<ArNote>, int) playSequence;
   final void Function(Pointer<ArEngine>) stopPlayback;

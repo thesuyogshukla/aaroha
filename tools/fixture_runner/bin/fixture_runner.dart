@@ -7,12 +7,15 @@
 //   dart run bin/fixture_runner.dart session <recordings/sessions/…-session-N.jsonl>
 //   dart run bin/fixture_runner.dart export <…-session-N.jsonl> <dir>   (attempts for trace previews)
 //   dart run bin/fixture_runner.dart clickcheck [dir]   (the fixtures with metronome clicks mixed in)
+//   dart run bin/fixture_runner.dart delay <delay-….json>...   (sound delay takes pulled from a phone)
 //   dart run bin/fixture_runner.dart intonation <…-session-N.jsonl>... [--csv <file>]
 //
 // Exit code is non-zero when a required check fails.
 
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:fixture_runner/native.dart';
 import 'package:fixture_runner/session.dart';
@@ -29,6 +32,7 @@ void main(List<String> args) {
   if (args.isEmpty) {
     stderr.writeln(
       'usage: fixture_runner selftest | analyze <wav> [...] | check [dir] | clickcheck [dir] | '
+      'delay <json>... | '
       'session <log.jsonl> '
       '| export <log.jsonl> <dir> | intonation <log.jsonl>... [--csv <file>]',
     );
@@ -40,6 +44,7 @@ void main(List<String> args) {
     'analyze' => analyze(core, args.skip(1).toList()),
     'check' => check(core, args.length > 1 ? args[1] : '${repoRoot()}/fixtures'),
     'clickcheck' => clickCheck(core, args.length > 1 ? args[1] : '${repoRoot()}/fixtures'),
+    'delay' => soundDelay(args.skip(1).toList()),
     'session' => replaySession(core, args[1]),
     'export' => exportAttempts(core, args[1], args[2]),
     'intonation' => intonationReport(core, [
@@ -177,6 +182,7 @@ bool selftest(NativeCore core) {
   }
   if (!_voiceSelftest(core, targets)) allOk = false;
   if (!_clickSelftest(core, targets, detunes)) allOk = false;
+  if (!_delaySelftest(core)) allOk = false;
   stdout.writeln('\n${allOk ? 'All required checks passed.' : 'Some required checks FAILED.'}');
   return allOk;
 }
@@ -291,6 +297,54 @@ bool _clickSelftest(NativeCore core, List<double> targets, List<double> detunes)
         stdout.writeln('      detected ${detected.map((n) => n.pitch).join(' ')}');
       }
     }
+  }
+  return ok;
+}
+
+/// The sound delay measurement (docs/08 M3-C) finds the engine's own clicks,
+/// delayed as through a room with echoes and the drone playing, to within
+/// a millisecond.
+bool _delaySelftest(NativeCore core) {
+  stdout.writeln('\nSound delay: the engine\'s clicks, delayed, with echoes and the drone');
+  var ok = true;
+  final played = [for (var k = 0; k < 6; k++) (0.7 * sampleRate).round() + k * sampleRate];
+  final length = played.last + 2 * sampleRate;
+  for (final delayMs in [80.0, 433.7, 750.0]) {
+    final d = (delayMs * sampleRate / 1000).round();
+    final heard = core.renderClicks(
+      [for (final t in played) (t + d, Beat.sam)],
+      sampleRate,
+      length,
+    );
+    final room = Float32List.fromList([
+      for (var i = 0; i < length; i++)
+        heard[i] + (i >= 300 ? 0.4 * heard[i - 300] : 0) + (i >= 1100 ? 0.2 * heard[i - 1100] : 0),
+    ]);
+    final drone = core.renderDrone(391.08, sampleRate, length);
+    final m = measureLatency(mix(room, drone, 0), sampleRate, played);
+    final pass = m != null && m.ok && (m.ms - delayMs).abs() < 1;
+    if (!pass) ok = false;
+    stdout.writeln(
+      '  ${delayMs.toStringAsFixed(1).padLeft(6)} ms: found ${m ?? 'nothing'}  ${pass ? 'PASS' : 'FAIL'}',
+    );
+  }
+  return ok;
+}
+
+/// Measures again, on the host, sound delay takes the app kept (docs/08
+/// M3-C): each `delay-….json` next to its `.wav`.
+bool soundDelay(List<String> paths) {
+  var ok = true;
+  for (final path in paths) {
+    final j = jsonDecode(File(path).readAsStringSync()) as Map<String, dynamic>;
+    final wav = readWav(path.replaceAll(RegExp(r'\.json$'), '.wav'));
+    final clicks = [for (final c in j['clicks'] as List) c as int];
+    final m = measureLatency(wav.samples, wav.sampleRate, clicks);
+    if (m == null || !m.ok) ok = false;
+    stdout.writeln(
+      '${path.split('/').last}: phone ${j['ms']} ms, host ${m ?? 'nothing heard'}'
+      '${m == null ? '' : ' · each ${m.each.map((e) => e.toStringAsFixed(1)).join(' ')}'}',
+    );
   }
   return ok;
 }

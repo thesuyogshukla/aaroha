@@ -231,4 +231,11 @@ class AudioEngine {
 
   /// Returns the number of frames written.
   int stopRecording() => _native.recordStop(_engine);
+
+  /// The engine frame of the recording's first sample, or null before any
+  /// audio was written.
+  int? get recordingStart {
+    final f = _native.recordFirstFrame(_engine);
+    return f < 0 ? null : f;
+  }
 }
