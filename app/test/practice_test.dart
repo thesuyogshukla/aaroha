@@ -47,7 +47,7 @@ void main() {
 
   test('a round passed with an out-of-tune note counts as a first-try pass', () {
     final r = RoundData(
-      [p('N')],
+      parsePhrase('N'),
       [
         [note('N', Verdict.outOfTune, played: 'N', dev: -30)],
       ],
@@ -96,14 +96,14 @@ void main() {
   test('session stats: first-try accuracy, confusions, intonation', () {
     final rounds = [
       RoundData(
-        [p('G')],
+        parsePhrase('G'),
         [
           [note('G', Verdict.pass, played: 'G', dev: -10)],
         ],
         [true],
       ),
       RoundData(
-        [p('G')],
+        parsePhrase('G'),
         [
           [note('G', Verdict.wrongSwar, played: 'm', dev: 70)],
           [note('G', Verdict.pass, played: 'G', dev: -20)],
@@ -112,13 +112,13 @@ void main() {
       ),
       // Judged strictly (an older session): out of tune failed.
       RoundData(
-        [p('m')],
+        parsePhrase('m'),
         [
           [note('m', Verdict.outOfTune, played: 'm', dev: 40)],
         ],
         [false],
       ),
-      RoundData([p('P')], const [], const []),
+      RoundData(parsePhrase('P'), const [], const []),
     ];
     final stats = SessionStats(rounds);
     expect(stats.attempted.length, 3);

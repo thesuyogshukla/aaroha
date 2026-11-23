@@ -160,7 +160,7 @@ With *Phrase length: grows with you* (the default), every phrase round's first t
 How each mode keeps to the length:
 - **Short phrase:** random walks of the level's length.
 - **Alankar:** as many whole groups per round as fit, spread evenly (8 notes at up to 6 are 4 + 4, not 6 + 2), at least one group.
-- **Raga:** parts between `,` breaks are joined while they fit. A part still too long is cut into near-equal pieces that **share a note**, so the line carries on: the Bhupali aaroh at up to 4 is `S R G P`, then `P D S'`. A session opens with every aaroh piece in order, then every avaroh piece.
+- **Raga:** parts between `,` breaks are joined while they fit. A part still too long is cut into near-equal pieces that **share a note**, so the line carries on: the Bhupali aaroh at up to 4 is `S R G P`, then `P D S'`. A session opens with every aaroh piece in order, then every avaroh piece. Pieces keep their written timing (D43).
 
 ## 10. Pitch trace
 

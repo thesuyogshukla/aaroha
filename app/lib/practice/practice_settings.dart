@@ -98,6 +98,7 @@ class PracticeSettings {
     this.ragaId = 'bhupali',
     this.phraseLevel = 0,
     this.showTrace = true,
+    this.tempo = 75,
   });
 
   final PracticeMode mode;
@@ -156,6 +157,13 @@ class PracticeSettings {
   /// (docs/05 §10). Never live.
   final bool showTrace;
 
+  /// Matras per minute for the call of a phrase (docs/08 M3-A). A single swar
+  /// keeps its own longer note. 75 is the 0.8 s per note phrases had before.
+  final int tempo;
+
+  /// The tempos offered on Home, slow to brisk.
+  static const tempos = [50, 60, 75, 90, 110];
+
   /// The raga whose drone and scale this session uses, if any.
   String? get ragaInUse => switch (mode) {
     PracticeMode.raga => ragaId,
@@ -197,6 +205,7 @@ class PracticeSettings {
     String? ragaId,
     int? phraseLevel,
     bool? showTrace,
+    int? tempo,
   }) => PracticeSettings(
     mode: mode ?? this.mode,
     answerBy: answerBy ?? this.answerBy,
@@ -223,6 +232,7 @@ class PracticeSettings {
     ragaId: ragaId ?? this.ragaId,
     phraseLevel: phraseLevel ?? this.phraseLevel,
     showTrace: showTrace ?? this.showTrace,
+    tempo: tempo ?? this.tempo,
   );
 
   Map<String, dynamic> toJson() => {
@@ -251,6 +261,7 @@ class PracticeSettings {
     'ragaId': ragaId,
     'phraseLevel': phraseLevel,
     'showTrace': showTrace,
+    'tempo': tempo,
   };
 
   factory PracticeSettings.fromJson(Map<String, dynamic> j) {
@@ -290,6 +301,7 @@ class PracticeSettings {
       ragaId: j['ragaId'] as String? ?? d.ragaId,
       phraseLevel: ((j['phraseLevel'] as int?) ?? d.phraseLevel).clamp(0, PhraseLevel.top),
       showTrace: j['showTrace'] as bool? ?? d.showTrace,
+      tempo: ((j['tempo'] as int?) ?? d.tempo).clamp(30, 200),
     );
   }
 }

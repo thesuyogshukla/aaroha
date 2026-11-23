@@ -215,13 +215,19 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                   : scheme.error,
           ]
         : null;
-    return SargamRow(
-      round.target,
+    return PhraseSargam(
+      round.phrase,
       script: s.settings.script,
-      size: round.target.length > 4 ? 36 : 48,
+      size: _positions(round.phrase) > 4 ? 36 : 48,
       colors: colors,
     );
   }
+
+  /// How many places the target takes on screen: notes, holds and rests.
+  static int _positions(Phrase phrase) => [
+    for (final item in layoutNotation(phrase))
+      if (item is MatraItem) item.cells.length else 1,
+  ].fold(0, (a, b) => a + b);
 
   /// Listen & name: whether a tap is accepted now.
   static bool _canAnswer(PracticeState s) {
@@ -450,7 +456,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   static List<RoundData> _roundData(PracticeState s) => [
     for (final r in s.rounds)
       RoundData(
-        r.target,
+        r.phrase,
         [
           for (final a in r.attempts)
             [for (final n in a.notes) NoteData(n.target, n.verdict, n.played?.pitch, n.deviation)],

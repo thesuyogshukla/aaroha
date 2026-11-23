@@ -117,6 +117,8 @@ Rules the parser enforces beyond the grammar:
 ## Rendering in the app
 
 - Komal: underline. Tivra Ma: short vertical line above. Mandra: dot below. Taar: dot above.
-- Matras in one vibhag are spaced evenly; multi-position matras get an arc underneath (Bhatkhande convention).
-- Holds render as `ऽ` (Devanagari) or `-` (Latin).
+- Each matra is one group, with a gap between groups; multi-position matras get an arc underneath (Bhatkhande convention).
+- Holds render as `ऽ` (Devanagari) or `-` (Latin), in the colour of the note they hold. Rests are a faint `_`. Bars are `|` and `||`, breaks `,`.
+- A phrase of one-matra notes with no rests or bars draws exactly as a plain row of swars (docs/08 M3-A). Kan and meend are not drawn yet (v0.4).
+- The layout (`layoutNotation` in `aaroha_core`) is shared by the printer and the app, so text and screen always agree.
 - Display modes (setting): shown, shown after attempt, hidden.

@@ -14,6 +14,7 @@ export 'src/model/swar.dart';
 export 'src/model/taal.dart';
 export 'src/model/tuning.dart';
 export 'src/notation/parser.dart';
+export 'src/notation/layout.dart';
 export 'src/notation/printer.dart';
 export 'src/practice/history.dart';
 export 'src/practice/material.dart';

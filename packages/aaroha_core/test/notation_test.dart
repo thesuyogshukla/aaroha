@@ -187,4 +187,16 @@ tempo: 80
       }
     });
   });
+
+  test('layout: matras, holds, rests, bars and breaks', () {
+    final items = layoutNotation(parsePhrase('S - RG m | P _ D~P , mG ||'));
+    expect(items.join(' '), 'S - RG m | P _ D~P , mG ||');
+    final matras = items.whereType<MatraItem>().toList();
+    expect(matras[1].cells.map((c) => c.kind), [CellKind.hold]);
+    expect(matras[2].cells.map((c) => c.note), [1, 2], reason: 'R and G are notes 1 and 2');
+    expect(matras[5].cells.single.kind, CellKind.rest);
+    expect(matras[6].cells.first.glide, isTrue);
+    expect(items.whereType<BarItem>().map((b) => b.avartanEnd), [false, true]);
+    expect(items.whereType<BreakItem>(), hasLength(1));
+  });
 }

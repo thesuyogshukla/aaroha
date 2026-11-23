@@ -30,7 +30,10 @@ class NoteData {
 }
 
 class RoundData {
-  const RoundData(this.target, this.attempts, this.passed);
+  RoundData(this.phrase, this.attempts, this.passed) : target = phrase.pitches;
+
+  /// The target as written, with its timing.
+  final Phrase phrase;
   final List<Pitch> target;
 
   /// Whether each attempt passed, as decided when it was judged (with the
@@ -109,7 +112,7 @@ final sessionRoundsProvider = FutureProvider.family<List<RoundData>, int>((ref, 
             .get();
     out.add(
       RoundData(
-        parsePhrase(r.target).pitches,
+        parsePhrase(r.target),
         [
           for (final a in attempts)
             [
@@ -206,7 +209,7 @@ class SessionSummaryView extends StatelessWidget {
             leading: Text('${i + 1}'),
             title: Align(
               alignment: Alignment.centerLeft,
-              child: SargamRow(rounds[i].target, script: script, size: 20),
+              child: PhraseSargam(rounds[i].phrase, script: script, size: 20),
             ),
             trailing: Text(_roundOutcome(rounds[i])),
           ),

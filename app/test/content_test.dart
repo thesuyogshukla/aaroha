@@ -82,6 +82,13 @@ void phraseLevelTests() {
     );
   });
 
+  test('the call tempo is 75 matras a minute unless changed', () {
+    expect(const PracticeSettings().tempo, 75, reason: 'the 0.8 s per note phrases had before');
+    expect(PracticeSettings.fromJson(const PracticeSettings(tempo: 60).toJson()).tempo, 60);
+    expect(PracticeSettings.fromJson({'tempo': 5000}).tempo, 200);
+    expect(PracticeSettings.tempos, contains(const PracticeSettings().tempo));
+  });
+
   test('the phrase level is stored apart for playing and naming', () async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);

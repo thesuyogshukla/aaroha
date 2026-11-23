@@ -22,8 +22,13 @@ import 'session_recorder.dart';
 enum PracticePhase { starting, calling, listening, answering, verdict, paused, finished, error }
 
 class RoundRecord {
-  RoundRecord(this.number, this.target, [this.label]);
+  RoundRecord(this.number, this.phrase, [this.label]) : target = phrase.pitches;
   final int number;
+
+  /// The target with its written timing, as the call plays it (docs/08 M3-A).
+  final Phrase phrase;
+
+  /// The target's swars in order, which are judged.
   final List<Pitch> target;
 
   /// What the target is, in alankar and raga practice ("Aaroh", "Pakad").
@@ -266,12 +271,14 @@ class PracticeController extends Notifier<PracticeState?> {
         final single = settings.mode == PracticeMode.single;
         _nextDrill = () => (
           label: '',
-          pitches: single
-              ? targets.single()
-              : targets.phrase(
-                  minLength: PhraseLevel.minNotes(_level),
-                  maxLength: PhraseLevel.maxNotes(_level),
-                ),
+          phrase: evenPhrase(
+            single
+                ? targets.single()
+                : targets.phrase(
+                    minLength: PhraseLevel.minNotes(_level),
+                    maxLength: PhraseLevel.maxNotes(_level),
+                  ),
+          ),
         );
         return (raga: null, rounds: null, keypad: pitches, title: null);
       case PracticeMode.alankar:
@@ -422,10 +429,9 @@ class PracticeController extends Notifier<PracticeState?> {
   Future<void> _nextRound() async {
     final s = state!;
     final drill = _nextDrill();
-    final target = drill.pitches;
     final round = RoundRecord(
       s.rounds.length + 1,
-      target,
+      drill.phrase,
       drill.label.isEmpty ? null : drill.label,
     );
     s.rounds.add(round);
@@ -435,7 +441,7 @@ class PracticeController extends Notifier<PracticeState?> {
           RoundsCompanion.insert(
             sessionId: _sessionId!,
             number: round.number,
-            target: target.map((p) => p.ascii).join(' '),
+            target: printNotation(round.phrase),
           ),
         );
     _call();
@@ -444,21 +450,15 @@ class PracticeController extends Notifier<PracticeState?> {
   /// Plays the target on the flute voice, then opens the listening window.
   void _call() {
     final s = state!;
-    final target = s.round!.target;
-    final single = target.length == 1;
-    final phrase = Phrase(
-      notes: [
-        for (var i = 0; i < target.length; i++)
-          Note(pitch: target[i], start: Fraction(i), duration: Fraction.one),
-      ],
-    );
+    final phrase = s.round!.phrase;
+    final single = s.round!.target.length == 1;
     final sr = _audio.sampleRate;
     final call = scheduleCall(
       phrase,
       saHz: s.flute.saHz,
       start: _audio.time + (0.3 * sr).round(),
       sampleRate: sr,
-      matraSeconds: single ? 1.6 : 0.8,
+      matraSeconds: single ? 1.6 : 60 / s.settings.tempo,
       tuning: s.settings.tuning.tuning,
     );
     _audio.play(call.notes);
@@ -472,7 +472,7 @@ class PracticeController extends Notifier<PracticeState?> {
     _listen(from: _listenAfterCall(), seconds: callSeconds * 2 + 4);
     _recorder?.log('call', {
       'round': s.round!.number,
-      'target': target.map((p) => p.ascii).join(' '),
+      'target': printNotation(phrase),
       'notes': [
         for (final n in call.notes) {'start': n.start, 'duration': n.duration, 'hz': n.hz},
       ],
@@ -610,7 +610,7 @@ class PracticeController extends Notifier<PracticeState?> {
     _recorder?.log('judge', {
       'round': round.number,
       'attempt': round.attempts.length,
-      'target': round.target.map((p) => p.ascii).join(' '),
+      'target': printNotation(round.phrase),
       'listenFrom': _listenFrom,
       'lastFrame': _heard.isEmpty ? null : _heard.last.time,
       'passed': result.passed,

@@ -200,24 +200,37 @@ license: public-domain
 
   group('RagaDrill', () {
     test('long phrases split at their breaks', () {
-      expect(splitAtBreaks(parsePhrase('G R S .D , S R G , P G , D P G R S')), [
-        ps('G R S .D S R G'),
-        ps('P G D P G R S'),
-      ]);
+      List<String> split(String text, {int maxNotes = 8}) => [
+        for (final p in splitAtBreaks(parsePhrase(text), maxNotes: maxNotes)) printNotation(p),
+      ];
+      expect(split('G R S .D , S R G , P G , D P G R S'), ['G R S .D S R G', 'P G D P G R S']);
       // A run longer than the limit is cut into pieces that share a note.
-      expect(splitAtBreaks(parsePhrase("S R G m P D N S' R'")), [
-        ps('S R G m P'),
-        ps("P D N S' R'"),
-      ]);
-      expect(splitAtBreaks(parsePhrase("S R G P D S'"), maxNotes: 4), [
-        ps('S R G P'),
-        ps("P D S'"),
-      ]);
-      expect(splitAtBreaks(parsePhrase("S R G P D S'"), maxNotes: 3), [
-        ps('S R G'),
-        ps('G P'),
-        ps("P D S'"),
-      ]);
+      expect(split("S R G m P D N S' R'"), ['S R G m P', "P D N S' R'"]);
+      expect(split("S R G P D S'", maxNotes: 4), ['S R G P', "P D S'"]);
+      expect(split("S R G P D S'", maxNotes: 3), ['S R G', 'G P', "P D S'"]);
+    });
+
+    test('pieces keep their written timing', () {
+      List<String> split(String text, {int maxNotes = 8}) => [
+        for (final p in splitAtBreaks(parsePhrase(text), maxNotes: maxNotes)) printNotation(p),
+      ];
+      expect(split('S - RG m , P - D'), ['S - RG m P - D'], reason: 'joined, carrying on');
+      // A piece that starts inside a matra keeps its place in it.
+      expect(split('S - RG m , P - DP mG', maxNotes: 4), ['S - RG m', 'P - DP', '_P mG']);
+      // Rests inside a part stay; rests at its edges and bars go.
+      expect(split('_ S _ R _ , G', maxNotes: 2), ['S _ R', 'G']);
+      expect(split('S R | G m ||'), ['S R G m']);
+      expect(split('S-R G', maxNotes: 2), ['S-R', '__R G']);
+    });
+
+    test('untimed material is even', () {
+      expect(isEven(evenPhrase(ps("S R G m P D N S'"))), isTrue);
+      expect(isEven(parsePhrase('S R G')), isTrue);
+      expect(isEven(parsePhrase('S - R')), isFalse);
+      expect(isEven(parsePhrase('SR G')), isFalse);
+      expect(isEven(parsePhrase('S _ R')), isFalse);
+      expect(isEven(parsePhrase('S R | G m')), isFalse);
+      expect(printNotation(evenPhrase(ps('S R G'))), 'S R G');
     });
 
     test('opens with every aaroh piece, then every avaroh piece', () {

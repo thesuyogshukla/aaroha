@@ -219,6 +219,15 @@ class _Options extends ConsumerWidget {
             '${settings.phraseLevel}',
             (v) => save(settings.copyWith(phraseLevel: int.parse(v))),
           ),
+          label('Tempo of the call'),
+          dropdown(
+            [
+              for (final t in PracticeSettings.tempos)
+                ('$t', '$t matras a minute${t == 75 ? ' (usual)' : ''}'),
+            ],
+            '${settings.tempo}',
+            (v) => save(settings.copyWith(tempo: int.parse(v))),
+          ),
         ],
         if (settings.mode == PracticeMode.single || settings.mode == PracticeMode.phrase) ...[
           label('Swars'),

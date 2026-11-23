@@ -99,6 +99,8 @@ Already done ahead of M3: the notation parser reads durations (holds `-`, rests 
 
 Acceptance: a phrase like `S - RG m | P - DP mG ||` plays and reads as written; existing modes sound as before.
 
+As built: every round's target is now a timed phrase, from the material to the call, the screen, the stored round and the session log (D43). Untimed material gets one matra per note, so it sounds and looks as before; content can now be written with durations, and raga phrases cut to the phrase level keep theirs. *Tempo of the call* on Home (50–110, default 75) sets the call's speed. The sargam display draws holds, rests, arcs under shared matras, bars and breaks; `app/test/notation_preview_test.dart` draws a PNG sheet of examples in both scripts. Still to check on the phone: hearing calls at each tempo. No shipped content uses durations yet; Rhythm mode (E) brings the first.
+
 ### B. Metronome and count-in
 - A click on every matra, accented on sam (the first matra) and lighter on khali, following the taal's vibhags (keherwa 4+4, dadra 3+3, teentaal 4×4, rupak 3+2+2). Without a taal it's a plain beat.
 - **How to start** is a setting with both options, as the owner asked: **count-in** (a bar of clicks before the call and before the response, so the player knows where the first matra falls) or **free start** (no count-in; the player's first note sets where the first matra falls, and the rest is judged from there). Both let rhythm be judged later (docs/05 §5).
