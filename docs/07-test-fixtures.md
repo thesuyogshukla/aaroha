@@ -100,6 +100,10 @@ The runner prints a table per fixture and exits non-zero on failure.
 
 Float WAV at 48 kHz is about 11 MB per minute. Use **Git LFS** for `fixtures/**/*.wav` from the start. Keep takes short.
 
+## Paused sessions
+
+A session that was paused is recorded in parts: `…-session-N.wav`/`.jsonl`, then `…-session-N-part2…` and so on, one per stretch between pauses, all on the same engine clock. `session`, `export` and `intonation` take the first part's log and read the rest with it, so pull every part.
+
 ## Trace previews
 
 `dart run bin/fixture_runner.dart export <session.jsonl> <dir>` (in `tools/fixture_runner`) writes each attempt of a recorded session as JSON: settings, target and the tracker frames heard while listening. `AAROHA_TRACE_IN=<dir> AAROHA_TRACE_OUT=<dir> FLUTTER_ROOT=<flutter> flutter test test/trace_preview_test.dart` (in `app/`) judges them again and draws each session's pitch traces to a PNG sheet with the app's own widget. Useful for changing the trace without a phone.

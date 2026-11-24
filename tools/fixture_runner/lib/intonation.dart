@@ -40,7 +40,8 @@ class IntonationNote {
 /// or not), as the app judges them.
 List<IntonationNote> collectIntonation(NativeCore core, List<String> logPaths) {
   final out = <IntonationNote>[];
-  for (final path in logPaths) {
+  // A later part is read with its session's first part.
+  for (final path in logPaths.where((p) => !RegExp(r'-part\d+\.jsonl$').hasMatch(p))) {
     final s = RecordedSession.load(core, path);
     final settings = s.judgeSettings();
     for (final e in s.judgeEvents) {

@@ -182,10 +182,15 @@ class _ConfusionGrid extends StatelessWidget {
     final cols = sorted({for (final k in confusions.keys) k.$2});
     final most = confusions.values.reduce((a, b) => a > b ? a : b);
     const cell = 40.0;
-    Widget glyph(Pitch p) => SizedBox(
+    // Labels take the same space as a cell, margin included, so each one
+    // sits centred over its column and beside its row.
+    const margin = EdgeInsets.all(1);
+    Widget glyph(Pitch p) => Container(
       width: cell,
       height: cell,
-      child: Center(child: SwarGlyph(p, script: script, size: 16)),
+      margin: margin,
+      alignment: Alignment.center,
+      child: SwarGlyph(p, script: script, size: 16),
     );
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -194,7 +199,7 @@ class _ConfusionGrid extends StatelessWidget {
         children: [
           Row(
             children: [
-              const SizedBox(width: cell),
+              const SizedBox(width: cell + 2),
               for (final c in cols) glyph(c),
             ],
           ),
@@ -206,7 +211,7 @@ class _ConfusionGrid extends StatelessWidget {
                   Container(
                     width: cell,
                     height: cell,
-                    margin: const EdgeInsets.all(1),
+                    margin: margin,
                     decoration: BoxDecoration(
                       color: confusions[(r, c)] == null
                           ? scheme.surfaceContainerHighest.withValues(alpha: 0.3)

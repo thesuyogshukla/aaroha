@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:aaroha/practice/practice_controller.dart';
 import 'package:aaroha/practice/practice_settings.dart';
 import 'package:aaroha/practice/session_summary.dart';
 import 'package:aaroha_core/aaroha_core.dart';
@@ -74,6 +75,46 @@ void main() {
     test('never giving up keeps retrying', () {
       const s = PracticeSettings(missAction: MissAction.autoRetry, giveUpAfter: 0);
       expect(afterMiss(50, s), MissStep.autoRetry);
+    });
+  });
+
+  group('pause', () {
+    RoundRecord round() => RoundRecord(1, parsePhrase('S R G'));
+    final judge = const PracticeSettings().judge(48000);
+    final right = judgeNamed([p('S')], [p('S')], judge);
+    final wrong = judgeNamed([p('S')], [p('R')], judge);
+
+    test('only while a round is under way', () {
+      for (final phase in PracticePhase.values) {
+        expect(
+          canPause(phase),
+          const [
+            PracticePhase.calling,
+            PracticePhase.listening,
+            PracticePhase.answering,
+            PracticePhase.verdict,
+          ].contains(phase),
+          reason: phase.name,
+        );
+      }
+    });
+
+    test('resuming a round still being worked on plays its call again', () {
+      expect(resumeStep(round()), ResumeStep.replayCall, reason: 'paused during the call');
+      expect(resumeStep(round()..attempts.add(wrong)), ResumeStep.replayCall, reason: 'a miss');
+    });
+
+    test('resuming after a round is over moves on', () {
+      expect(resumeStep(null), ResumeStep.nextRound);
+      expect(resumeStep(round()..attempts.addAll([wrong, right])), ResumeStep.nextRound);
+      expect(
+        resumeStep(
+          round()
+            ..attempts.add(wrong)
+            ..gaveUp = true,
+        ),
+        ResumeStep.nextRound,
+      );
     });
   });
 

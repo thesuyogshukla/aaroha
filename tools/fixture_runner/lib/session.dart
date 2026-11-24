@@ -18,25 +18,43 @@ class RecordedSession {
     this.frames,
   );
 
+  /// Loads a session log and its recording, with the parts recorded after
+  /// each pause (`…-session-N-part2.jsonl`, …) appended in order. Every part
+  /// is stamped with the same engine clock, so they join up.
   factory RecordedSession.load(NativeCore core, String logPath) {
-    final events = [
-      for (final line in File(logPath).readAsLinesSync())
-        if (line.trim().isNotEmpty) jsonDecode(line) as Map<String, dynamic>,
-    ];
-    final header = events.firstWhere((e) => e['event'] == 'recording');
-    final wav = readWav(logPath.replaceAll(RegExp(r'\.jsonl$'), '.wav'));
-    final recordStart = header['engineFrame'] as int;
-    final saHz = (header['saHz'] as num).toDouble();
-    final frames = [
-      for (final f in core.analyze(
-        wav.samples,
-        wav.sampleRate,
-        highpassHz: 0.7 * hzFromCents(-500, saHz),
-        minHz: hzFromCents(-700, saHz),
-      ))
-        PitchFrame(time: f.time + recordStart, hz: f.hz, confidence: f.confidence, rms: f.rms),
-    ];
-    return RecordedSession._(logPath, events, header, wav.sampleRate, wav.seconds, frames);
+    final base = logPath.replaceAll(RegExp(r'\.jsonl$'), '');
+    final events = <Map<String, dynamic>>[];
+    final frames = <PitchFrame>[];
+    var seconds = 0.0;
+    var sampleRate = 48000;
+    Map<String, dynamic>? header;
+    for (var part = 1; ; part++) {
+      final path = part == 1 ? base : '$base-part$part';
+      if (!File('$path.jsonl').existsSync()) break;
+      final partEvents = [
+        for (final line in File('$path.jsonl').readAsLinesSync())
+          if (line.trim().isNotEmpty) jsonDecode(line) as Map<String, dynamic>,
+      ];
+      final start = partEvents.firstWhere((e) => e['event'] == 'recording');
+      header ??= start;
+      events.addAll(partEvents);
+      final wav = readWav('$path.wav');
+      sampleRate = wav.sampleRate;
+      seconds += wav.seconds;
+      final recordStart = start['engineFrame'] as int;
+      final saHz = (start['saHz'] as num).toDouble();
+      frames.addAll([
+        for (final f in core.analyze(
+          wav.samples,
+          wav.sampleRate,
+          highpassHz: 0.7 * hzFromCents(-500, saHz),
+          minHz: hzFromCents(-700, saHz),
+        ))
+          PitchFrame(time: f.time + recordStart, hz: f.hz, confidence: f.confidence, rms: f.rms),
+      ]);
+    }
+    if (header == null) throw ArgumentError('no session log at $logPath');
+    return RecordedSession._(logPath, events, header, sampleRate, seconds, frames);
   }
 
   final String path;

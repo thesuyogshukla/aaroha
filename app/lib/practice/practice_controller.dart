@@ -49,6 +49,24 @@ class RoundRecord {
   bool get passed => attempts.any((a) => a.passed);
 }
 
+/// Phases a session can be paused from: not while it is setting up, nor
+/// once it has ended.
+bool canPause(PracticePhase phase) => switch (phase) {
+  PracticePhase.calling ||
+  PracticePhase.listening ||
+  PracticePhase.answering ||
+  PracticePhase.verdict => true,
+  _ => false,
+};
+
+enum ResumeStep { replayCall, nextRound }
+
+/// What resuming a paused session does: a round still being worked on starts
+/// again from its call (the player has lost the thread); one already passed
+/// or given up moves on to the next.
+ResumeStep resumeStep(RoundRecord? round) =>
+    round == null || round.passed || round.gaveUp ? ResumeStep.nextRound : ResumeStep.replayCall;
+
 class PracticeState {
   const PracticeState({
     required this.phase,
@@ -391,16 +409,31 @@ class PracticeController extends Notifier<PracticeState?> {
     }
   }
 
-  /// Stops listening (e.g. the app went to the background).
+  /// Stops everything mid-session: the call, the clicks, the drone and the
+  /// mic (the player tapped Pause, or the app went to the background).
+  /// [resume] picks the session up again.
   void pause() {
     final s = state;
-    if (s == null || s.phase == PracticePhase.finished) return;
+    if (s == null || !canPause(s.phase)) return;
     _stopTimers();
     _audio.stopPlayback();
     _audio.stopClicks();
     _audio.stop();
     _recorder?.pause();
     state = s.copyWith(phase: PracticePhase.paused);
+  }
+
+  /// Carries on after [pause]: plays the round's call again, or moves on if
+  /// the round was already over.
+  Future<void> resume() async {
+    final s = state;
+    if (s == null || s.phase != PracticePhase.paused) return;
+    switch (resumeStep(s.round)) {
+      case ResumeStep.nextRound:
+        await next();
+      case ResumeStep.replayCall:
+        await replay();
+    }
   }
 
   Future<void> finish() async {

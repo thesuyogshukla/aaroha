@@ -82,7 +82,15 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           title: Text(
             round == null ? s.flute.name : 'Round ${round.number} of ${s.settings.rounds}',
           ),
-          actions: [TextButton(onPressed: controller.finish, child: const Text('End'))],
+          actions: [
+            if (canPause(s.phase))
+              IconButton(
+                tooltip: 'Pause',
+                onPressed: controller.pause,
+                icon: const Icon(Icons.pause),
+              ),
+            TextButton(onPressed: controller.finish, child: const Text('End')),
+          ],
         ),
         body: SafeArea(
           // During an automatic-retry countdown, a tap anywhere pauses it.
@@ -302,7 +310,25 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       case PracticePhase.verdict:
         return _verdict(context, s);
       case PracticePhase.paused:
-        return Text('Paused', style: theme.textTheme.titleLarge);
+        final again = resumeStep(s.round) == ResumeStep.replayCall;
+        return Column(
+          children: [
+            Icon(Icons.pause_circle_outline, size: 40, color: theme.colorScheme.primary),
+            const SizedBox(height: 8),
+            Text('Paused', style: theme.textTheme.titleLarge),
+            const SizedBox(height: 4),
+            Text(
+              again ? 'Resume plays this round\'s call again.' : 'Resume starts the next round.',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: ref.read(practiceProvider.notifier).resume,
+              icon: const Icon(Icons.play_arrow),
+              label: const Text('Resume'),
+            ),
+          ],
+        );
       case PracticePhase.error:
         return Text(
           s.message ?? 'Something went wrong',
