@@ -154,7 +154,7 @@ paused → resume → next           (round passed or given up)
 - **Pause:** the *Pause* button beside *End*, or the app going to the background, stops the call, the clicks, the drone and the mic. The session recording also pauses, so the next part of the WAV starts at the next call. *Resume* starts the round again from its call, because the player has lost the thread. A round that was already passed or given up moves on to the next round instead. *End* still ends the session from either state.
 
 - **Turn-taking:** capture is gated off while the app is calling, and back on after the call plus a short tail (~150 ms). Frames are tagged with engine time anyway, so the evaluator can ignore anything before the listen window opens.
-- **Listen window ends** when: enough notes have been heard for the target and the player has stopped (silence > 600 ms), or a timeout (target duration × 2 + 3 s).
+- **Listen window ends** when: enough notes have been heard for the target and the player has stopped (silence > 600 ms), or a timeout (docs/05, Ending an attempt): time to start, then the whole phrase from the player's first note (`ListenWindow`, D50).
 
 ### Persistence (drift)
 

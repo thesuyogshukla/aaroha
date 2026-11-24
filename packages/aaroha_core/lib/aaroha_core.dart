@@ -19,6 +19,7 @@ export 'src/notation/parser.dart';
 export 'src/notation/layout.dart';
 export 'src/notation/printer.dart';
 export 'src/practice/history.dart';
+export 'src/practice/listen_window.dart';
 export 'src/practice/material.dart';
 export 'src/practice/metronome.dart';
 export 'src/practice/phrase_level.dart';

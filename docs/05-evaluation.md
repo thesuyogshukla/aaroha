@@ -87,7 +87,7 @@ The call reaches the mic one **round trip** late (output latency + room + input 
 |---|---|
 | Single swar | a note ≥ 300 ms exists and the player has been quiet 500 ms, or that note has lasted 1.5 s |
 | Phrase | at least as many notes as targets and 600 ms quiet, or any notes and 1.5 s quiet |
-| Both | the window times out: twice the call's length + 4 s (8 s for "Try again") |
+| Both | the window times out (D50): a count-in, if any, then twice the phrase's length + 4 s (at least 8 s) to start; once the player's first note is heard, never less than twice the phrase's length + 1.5 s from it. *Try again* uses the same window as after the call. |
 
 "Try again" listens again without replaying; "Replay" plays the call, then listens. Every judged listen is an attempt; attempt 1 is the first try.
 
