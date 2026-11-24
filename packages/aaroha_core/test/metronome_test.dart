@@ -88,4 +88,41 @@ void main() {
     expect(r.clicks.map((c) => c.matra), [0, 1, 2, 3, 4, 5, 6]);
     expect(retryClicks(responseMatras: 4).clicks, isEmpty);
   });
+
+  group('positions in the cycle, for the beat strip', () {
+    const keherwa = Taal.keherwa;
+    List<int> positions(RoundClicks r) => [for (final c in r.clicks) c.position];
+
+    test('a free start carries the call\'s cycle into the turn', () {
+      final r = roundClicks(callMatras: 6, responseMatras: 5, taal: keherwa, metronome: true);
+      expect(positions(r), [0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2]);
+      expect(
+        [for (final c in r.clicks) c.beat == Beat.sam],
+        [
+          true, false, false, false, false, false, false, false, true, false, false, //
+        ],
+      );
+    });
+
+    test('counted in, the count-in ends the cycle and the turn starts a new one', () {
+      final r = roundClicks(
+        callMatras: 6,
+        responseMatras: 3,
+        taal: keherwa,
+        metronome: true,
+        countIn: true,
+      );
+      expect(positions(r), [4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 4, 5, 6, 7, 0, 1, 2]);
+    });
+
+    test('listening again keeps them', () {
+      final r = retryClicks(responseMatras: 3, taal: keherwa, metronome: true, countIn: true);
+      expect(positions(r), [4, 5, 6, 7, 0, 1, 2]);
+    });
+
+    test('without a taal every click is at 0', () {
+      final r = roundClicks(callMatras: 3, responseMatras: 2, metronome: true, countIn: true);
+      expect(positions(r).toSet(), {0});
+    });
+  });
 }

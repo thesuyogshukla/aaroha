@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aaroha_core/aaroha_core.dart';
 
 import '../widgets/pitch_trace.dart';
+import '../widgets/beat_strip.dart';
 import '../widgets/sargam.dart';
 import '../widgets/swar_keypad.dart';
 import 'practice_controller.dart';
@@ -289,16 +290,26 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             Icon(Icons.hearing, size: 40, color: theme.colorScheme.primary),
             const SizedBox(height: 8),
             Text('Listen…', style: theme.textTheme.titleLarge),
+            ..._beatStrip(s),
           ],
         );
       case PracticePhase.listening:
+        final settings = s.settings;
+        // With clicks, where to come in (docs/08 M3-B).
+        final cue = !settings.clicks
+            ? null
+            : settings.countIn
+            ? (settings.taal == null ? 'Come in after the count-in' : 'Come in on sam')
+            : (settings.taal == null ? 'Start on any click' : 'Start on any sam');
         return Column(
           children: [
             Icon(Icons.mic, size: 40, color: theme.colorScheme.primary),
             const SizedBox(height: 8),
             Text('Your turn', style: theme.textTheme.titleLarge),
+            if (cue != null) Text(cue, style: theme.textTheme.bodyMedium),
             const SizedBox(height: 12),
             SizedBox(width: 200, child: LinearProgressIndicator(value: s.level)),
+            ..._beatStrip(s),
           ],
         );
       case PracticePhase.answering:
@@ -337,6 +348,23 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       case PracticePhase.finished:
         return const SizedBox.shrink();
     }
+  }
+
+  /// The taal's matras, lit with the clicks as they are heard, while the
+  /// call and the player's turn click.
+  List<Widget> _beatStrip(PracticeState s) {
+    final controller = ref.read(practiceProvider.notifier);
+    if (!s.settings.clicks || controller.beats.isEmpty) return const [];
+    return [
+      const SizedBox(height: 16),
+      BeatStrip(
+        // A new plan (each call or retry) starts a fresh strip.
+        key: ObjectKey(controller.beats),
+        taal: s.settings.taal,
+        plan: controller.beats,
+        now: controller.heardTime,
+      ),
+    ];
   }
 
   Widget _verdict(BuildContext context, PracticeState s) {

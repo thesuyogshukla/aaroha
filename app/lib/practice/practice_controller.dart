@@ -13,6 +13,7 @@ import '../data/database.dart';
 import '../data/history.dart';
 import '../data/phrase_level.dart';
 import '../data/providers.dart';
+import '../widgets/beat_strip.dart';
 import 'practice_settings.dart';
 import 'session_recorder.dart';
 
@@ -175,6 +176,16 @@ class PracticeController extends Notifier<PracticeState?> {
   int _listenFrom = 0;
   int _deadline = 0;
   final _heard = <PitchFrame>[];
+
+  /// The clicks of the current call or retry, for the beat strip.
+  BeatPlan _beats = BeatPlan.none;
+  BeatPlan get beats => _beats;
+
+  /// The engine time the player is hearing now. The click reaches the mic
+  /// one round trip after it was played; the strip lights it then, a little
+  /// after the ear hears it (by the mic's share of the delay), since a light
+  /// slightly late looks in time and one early doesn't.
+  int heardTime() => _audio.time - _audio.loopbackFrames;
 
   AudioService get _audio => ref.read(audioServiceProvider);
   AppDatabase get _db => ref.read(databaseProvider);
@@ -598,6 +609,10 @@ class PracticeController extends Notifier<PracticeState?> {
       volume: s.clickVolume,
     );
     _audio.playClicks(clicks);
+    _beats = BeatPlan([
+      for (var i = 0; i < clicks.length; i++)
+        (time: clicks[i].time, position: p.clicks[i].position),
+    ], matraFrames.round());
     return {
       'taal': s.taalId,
       'metronome': s.metronome,

@@ -2,7 +2,7 @@ import '../model/taal.dart';
 
 /// One metronome click, [matra] matras after the round's first click.
 class Click {
-  const Click(this.matra, this.beat, {this.countIn = false});
+  const Click(this.matra, this.beat, {this.countIn = false, this.position = 0});
 
   final int matra;
   final Beat beat;
@@ -10,12 +10,20 @@ class Click {
   /// Part of a count-in, not of the call or the response.
   final bool countIn;
 
-  @override
-  bool operator ==(Object other) =>
-      other is Click && other.matra == matra && other.beat == beat && other.countIn == countIn;
+  /// Where in the taal's cycle the click falls: matras after sam (0 is sam).
+  /// Always 0 without a taal. The beat strip lights this matra (docs/08 M3-B).
+  final int position;
 
   @override
-  int get hashCode => Object.hash(matra, beat, countIn);
+  bool operator ==(Object other) =>
+      other is Click &&
+      other.matra == matra &&
+      other.beat == beat &&
+      other.countIn == countIn &&
+      other.position == position;
+
+  @override
+  int get hashCode => Object.hash(matra, beat, countIn, position);
 
   @override
   String toString() => '${countIn ? 'in:' : ''}$matra${beat.name[0]}';
@@ -73,11 +81,17 @@ RoundClicks roundClicks({
   final c = countIn ? countInLength(taal) : 0;
   Beat beat(int fromSam) =>
       taal == null ? (fromSam == 0 ? Beat.sam : Beat.plain) : taal.beatAt(fromSam);
+  int position(int fromSam) => taal == null ? 0 : fromSam % taal.matras;
   // A count-in clicks the matras just before a sam, as the taal marks
   // them (the end of the previous avartan); without a taal, all alike.
   List<Click> countInTo(int sam) => [
     for (var k = c; k > 0; k--)
-      Click(sam - k, taal == null ? Beat.plain : taal.beatAt(taal.matras - k), countIn: true),
+      Click(
+        sam - k,
+        taal == null ? Beat.plain : taal.beatAt(taal.matras - k),
+        countIn: true,
+        position: taal == null ? 0 : position(taal.matras - k),
+      ),
   ];
 
   final callAt = c;
@@ -85,13 +99,17 @@ RoundClicks roundClicks({
   final clicks = <Click>[
     if (countIn) ...countInTo(callAt),
     if (metronome)
-      for (var m = 0; m < callMatras; m++) Click(callAt + m, beat(m)),
+      for (var m = 0; m < callMatras; m++) Click(callAt + m, beat(m), position: position(m)),
     if (countIn) ...countInTo(responseAt),
     if (metronome)
       for (var m = 0; m < responseMatras; m++)
         // Counted in, the response starts its own cycle; free, the call's
         // cycle carries on.
-        Click(responseAt + m, beat(countIn ? m : callMatras + m)),
+        Click(
+          responseAt + m,
+          beat(countIn ? m : callMatras + m),
+          position: position(countIn ? m : callMatras + m),
+        ),
   ];
   return RoundClicks(clicks: clicks, callAt: callAt, responseAt: responseAt, countInMatras: c);
 }
@@ -118,7 +136,7 @@ RoundClicks retryClicks({
   return RoundClicks(
     clicks: [
       for (final k in full.clicks)
-        if (k.matra >= c) Click(k.matra - c, k.beat, countIn: k.countIn),
+        if (k.matra >= c) Click(k.matra - c, k.beat, countIn: k.countIn, position: k.position),
     ],
     callAt: c,
     responseAt: c,
