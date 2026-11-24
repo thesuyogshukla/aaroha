@@ -94,6 +94,9 @@ class AttemptResult {
   /// Every note also within tolerance.
   bool get inTune => notes.isNotEmpty && notes.every((n) => n.passed);
 
+  /// A note's attack cracked into another mode before settling (D48).
+  bool get cracked => notes.any((n) => n.played?.crack != null);
+
   List<JudgedNote> get targets => [
     for (final n in notes)
       if (n.target != null) n,
@@ -214,6 +217,7 @@ List<DetectedNote> _mergeRepeats(List<DetectedNote> notes, List<Pitch> targets) 
         cents: longer.cents,
         deviation: longer.deviation,
         stability: longer.stability,
+        crack: last.crack ?? note.crack,
       );
     } else {
       out.add(note);

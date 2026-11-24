@@ -18,6 +18,9 @@ class SegmenterConfig {
     this.unstableNoteMs = 250,
     this.unstableCents = 20,
     this.octaveFlipMs = 200,
+    this.crackMs = 250,
+    this.crackCents = 702,
+    this.crackToleranceCents = 50,
     this.faintNoteRatio = 0.15,
     this.faintNoteConfidence = 0.9,
     this.attackMs = 80,
@@ -55,6 +58,16 @@ class SegmenterConfig {
   /// another octave, with no re-articulation between them, is that note
   /// cracking at its start or end: it becomes part of the note.
   final double octaveFlipMs;
+
+  /// A run shorter than [crackMs], about [crackCents] (a fifth: 3:2) above
+  /// the note it runs into with no re-articulation, is that note's attack
+  /// cracking into the next mode of its fingering, e.g. Pa (second mode)
+  /// overblown to near taar Re (third mode). It becomes part of the note,
+  /// which keeps the crack's swar in [DetectedNote.crack] so the verdict can
+  /// point it out (decisions.md D48).
+  final double crackMs;
+  final double crackCents;
+  final double crackToleranceCents;
 
   /// A note whose median RMS is below [faintNoteRatio] × the median of all
   /// notes' levels (0.15 ≈ 16.5 dB quieter) and whose median confidence is
@@ -111,9 +124,14 @@ class DetectedNote {
     required this.cents,
     required this.deviation,
     required this.stability,
+    this.crack,
   });
 
   final Pitch pitch;
+
+  /// The swar the attack cracked to before settling on [pitch] (D48), or null
+  /// for a clean attack.
+  final Pitch? crack;
 
   /// Engine frames of the first frame and one hop past the last frame.
   final int onset;
@@ -133,7 +151,7 @@ class DetectedNote {
   @override
   String toString() =>
       '${pitch.ascii} ${deviation >= 0 ? '+' : ''}${deviation.toStringAsFixed(1)}c '
-      '(±${stability.toStringAsFixed(1)}) @$onset';
+      '(±${stability.toStringAsFixed(1)}) @$onset${crack == null ? '' : ' cracked:${crack!.ascii}'}';
 }
 
 class _Run {
@@ -143,6 +161,7 @@ class _Run {
   /// True when the run starts after silence, a gap or a loudness dip, i.e.
   /// the player re-articulated, rather than just moving to the next note.
   bool articulated;
+  Pitch? crack;
   final List<int> frames = [];
 
   /// Frames inside a loudness dip: they extend the note but don't count
@@ -275,29 +294,42 @@ List<DetectedNote> segmentNotes(
     }
   }
 
-  // Absorb short octave flips into the note they belong to, preferring the
-  // following note (a cracked attack) over the previous one (a release).
+  // Absorb short octave flips and cracked attacks into the note they belong
+  // to, preferring the following note (an attack) over the previous one (a
+  // release). After an attack is absorbed the run before it is looked at
+  // again: an attack can pass through more than one mode (mandra Pa, then
+  // near taar Re, then Pa).
   final flipFrames = (config.octaveFlipMs / config.frameMs).ceil();
+  final crackFrames = (config.crackMs / config.frameMs).ceil();
   bool flipOf(_Run flip, _Run note) =>
       flip.frames.length < flipFrames &&
       flip.pitch.swar == note.pitch.swar &&
       flip.pitch.octave != note.pitch.octave &&
       note.frames.length >= flipFrames;
+  double medianCents(_Run run) =>
+      ([for (final i in run.frames) cents[i]!]..sort())[run.frames.length ~/ 2];
+  bool crackOf(_Run crack, _Run note) =>
+      crack.frames.length < crackFrames &&
+      note.frames.length >= crackFrames &&
+      (medianCents(crack) - medianCents(note) - config.crackCents).abs() <=
+          config.crackToleranceCents;
   for (var i = 0; i < kept.length; i++) {
     final run = kept[i];
     final next = i + 1 < kept.length ? kept[i + 1] : null;
     final previous = i > 0 ? kept[i - 1] : null;
-    if (next != null && !next.articulated && flipOf(run, next)) {
+    if (next != null && !next.articulated && (flipOf(run, next) || crackOf(run, next))) {
+      if (!flipOf(run, next)) next.crack = run.pitch;
+      next.crack ??= run.crack;
       next.tail.addAll(run.frames);
       next.tail.addAll(run.tail);
       next.articulated = run.articulated;
+      kept.removeAt(i);
+      i = math.max(-1, i - 2);
     } else if (previous != null && !run.articulated && flipOf(run, previous)) {
       previous.tail.addAll(run.frames);
       previous.tail.addAll(run.tail);
-    } else {
-      continue;
+      kept.removeAt(i--);
     }
-    kept.removeAt(i--);
   }
 
   // Drop notes far fainter than the rest of the attempt.
@@ -398,6 +430,7 @@ DetectedNote _toNote(
     cents: median,
     deviation: median - tuning.centsOf(run.pitch),
     stability: _stdDev(stable),
+    crack: run.crack,
   );
 }
 

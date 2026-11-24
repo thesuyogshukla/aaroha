@@ -25,6 +25,8 @@ A **note** is a run of voiced frames on the same quantised swar lasting at least
 
 **Octave flips** under **200 ms** on the same swar as a touching note, in another octave and with no re-articulation between them, become part of that note (its cracked attack or a release slipping down). The following note is preferred. Longer flips, like a 320 ms overblow into taar Ga, stay as their own note and get judged (decisions.md D22).
 
+**Cracked attacks** (D48): a hard-tongued note can sound the next mode of its fingering before it settles. Pa overblown near taar Re is the third mode over Pa's second, a fifth (3:2) above. A run under **250 ms**, **702 ± 50 c** above the note it runs into, with no re-articulation between them, becomes part of that note. This can repeat when an attack passes through more than one mode (mandra Pa, then near taar Re, then Pa). The note keeps its onset at the crack and its pitch from the settled part. Unlike an octave flip, it is pointed out: the note still passes, the verdict line adds "attack cracked upward" and the icon takes the in-between colour. The swar it cracked to isn't named; the pitch trace shows it. A longer run, or one re-tongued into the note, is a played note.
+
 For each note:
 - `onset` = engine time of its first frame
 - `duration`

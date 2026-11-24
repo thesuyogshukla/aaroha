@@ -94,11 +94,15 @@ The app fills `played:` with the notes the take asks for. If you played somethin
 
 The runner prints a table per fixture and exits non-zero on failure.
 
-`selftest` also checks the metronome (D44): clicks alone at 110 a minute must give no notes on any flute, and clicks over the synthetic notes, from 12 dB below the flute's peak to 6 dB above it, must leave every note and its cents unchanged. `clickcheck [dir]` runs `check` again with clicks mixed into the labelled recordings at −6, 0 and +6 dB. Known result: 33 of 36. The one difference is the D# `scale-slow` take's overblown madhya Pa, whose tracker confidence already hovers at the threshold; a click there stretches the weak patch past the 150 ms bridge and the note splits (D44).
+`selftest` also checks the metronome (D44): clicks alone at 110 a minute must give no notes on any flute, and clicks over the synthetic notes, from 12 dB below the flute's peak to 6 dB above it, must leave every note and its cents unchanged. `clickcheck [dir]` runs `check` again with clicks mixed into the labelled recordings at −6, 0 and +6 dB. Known result: 36 of 39. The one difference is the D# `scale-slow` take's overblown madhya Pa, whose tracker confidence already hovers at the threshold; a click there stretches the weak patch past the 150 ms bridge and the note splits (D44).
 
 ## Storage
 
 Float WAV at 48 kHz is about 11 MB per minute. Use **Git LFS** for `fixtures/**/*.wav` from the start. Keep takes short.
+
+## Takes cut from sessions
+
+`g-medium/cracked-attacks` joins the listening windows of three tries from practice sessions 33–35 (the label's `source_file` says which). In each, a hard-tongued Pa cracks near taar Re before settling (D48). Cut such takes from the listening window only. Earlier audio holds the end of the app's own call.
 
 ## Paused sessions
 

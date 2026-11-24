@@ -389,7 +389,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           size: 56,
           color: !result.passed
               ? theme.colorScheme.error
-              : result.inTune
+              : result.inTune && !result.cracked
               ? theme.colorScheme.primary
               : theme.colorScheme.tertiary,
         ),
@@ -419,11 +419,14 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             : ''}';
     String cents(double d) => '${d >= 0 ? '+' : '−'}${d.abs().round()} c';
     final target = n.target == null || hideTarget ? 'the note' : name(n.target!);
+    // A cracked attack passes but is pointed out (D48). The swar it cracked
+    // to isn't named: the curve shows it, and it could give the target away.
+    final cracked = n.played?.crack == null ? '' : ', attack cracked upward';
     return switch (n.verdict) {
-      Verdict.pass => '✓ ${hideTarget ? 'Right' : target}  ${cents(n.deviation!)}',
+      Verdict.pass => '✓ ${hideTarget ? 'Right' : target}  ${cents(n.deviation!)}$cracked',
       Verdict.outOfTune =>
         '✓ ${hideTarget ? 'Right swar' : target}, but ${n.deviation! < 0 ? 'flat' : 'sharp'} '
-            '${cents(n.deviation!)}',
+            '${cents(n.deviation!)}$cracked',
       Verdict.wrongSwar =>
         'You played ${name(n.played!.pitch)}${hideTarget ? '' : ', not $target'}',
       Verdict.wrongOctave => 'Right swar, wrong octave (${name(n.played!.pitch)})',

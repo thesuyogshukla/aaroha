@@ -182,6 +182,72 @@ void main() {
     expect(asciiOf(segmentNotes(b.frames, saHz: sa)), ['N']);
   });
 
+  group('a cracked attack (D48)', () {
+    test('Pa cracking up a fifth is Pa, with the crack noted', () {
+      // Session 33: P tongued hard sounds near taar Re (third mode of the
+      // all-closed fingering) for 210 ms, then settles.
+      final b = FrameBuilder()
+        ..note(1387, 210)
+        ..note(-512, 30)
+        ..note(700, 600);
+      final notes = segmentNotes(b.frames, saHz: sa);
+      expect(asciiOf(notes), ['P']);
+      expect(notes.single.crack?.ascii, "R'");
+      expect(notes.single.durationMs(48000), closeTo(840, 10), reason: 'onset at the crack');
+      expect(notes.single.deviation, closeTo(0, 0.5), reason: 'pitch from the settled note');
+    });
+
+    test('through more than one mode', () {
+      // Session 34: mandra Pa for 120 ms, near taar Re for 180 ms, then Pa.
+      final b = FrameBuilder()
+        ..note(-510, 120)
+        ..note(1390, 180)
+        ..note(-512, 30)
+        ..note(711, 600);
+      final notes = segmentNotes(b.frames, saHz: sa);
+      expect(asciiOf(notes), ['P']);
+      expect(notes.single.crack?.ascii, "R'");
+    });
+
+    test('after a note, moving on legato', () {
+      final b = FrameBuilder()
+        ..note(386, 600)
+        ..note(1395, 200)
+        ..note(700, 600);
+      final notes = segmentNotes(b.frames, saHz: sa);
+      expect(asciiOf(notes), ['G', 'P']);
+      expect([for (final n in notes) n.crack?.ascii], [null, "R'"]);
+    });
+
+    test('a clean attack has no crack', () {
+      final b = FrameBuilder()..note(700, 600);
+      expect(segmentNotes(b.frames, saHz: sa).single.crack, isNull);
+    });
+
+    test('a fifth held longer is a played note', () {
+      final b = FrameBuilder()
+        ..note(1404, 300)
+        ..note(702, 600);
+      expect(asciiOf(segmentNotes(b.frames, saHz: sa)), ["R'", 'P']);
+    });
+
+    test('a re-tongued note a fifth above is a played note', () {
+      // A loudness dip between them: the player articulated P.
+      final b = FrameBuilder()
+        ..note(1404, 200)
+        ..note(1404, 40, rms: 0.005)
+        ..note(702, 600);
+      expect(asciiOf(segmentNotes(b.frames, saHz: sa)), ["R'", 'P']);
+    });
+
+    test('a short note at another interval is a played note', () {
+      final b = FrameBuilder()
+        ..note(1200, 200)
+        ..note(702, 600);
+      expect(asciiOf(segmentNotes(b.frames, saHz: sa)), ["S'", 'P']);
+    });
+  });
+
   test('a long overblow is still its own note', () {
     // Real take: Ga overblown into taar Ga for 320 ms.
     final b = FrameBuilder()

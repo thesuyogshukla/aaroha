@@ -174,7 +174,8 @@ bool replaySession(NativeCore core, String logPath) {
     stdout.writeln(
       '    heard: ${notes.isEmpty ? 'nothing' : notes.map((n) => '${n.pitch.ascii}'
                 '(${n.deviation >= 0 ? '+' : ''}${n.deviation.toStringAsFixed(0)}c, '
-                '${n.durationMs(sr).toStringAsFixed(0)}ms)').join(' ')}',
+                '${n.durationMs(sr).toStringAsFixed(0)}ms'
+                '${n.crack == null ? '' : ', cracked to ${n.crack!.ascii}'})').join(' ')}',
     );
   }
   stdout.writeln('\n$agree of $total verdicts reproduced on the host.');

@@ -2,7 +2,7 @@ import 'package:aaroha_core/aaroha_core.dart';
 import 'package:test/test.dart';
 
 /// A detected note at [cents] from Sa lasting [ms].
-DetectedNote played(double cents, {int ms = 600, int at = 0}) {
+DetectedNote played(double cents, {int ms = 600, int at = 0, Pitch? crack}) {
   final nearest = Tuning.equal.nearest(cents);
   return DetectedNote(
     pitch: nearest.pitch,
@@ -11,6 +11,7 @@ DetectedNote played(double cents, {int ms = 600, int at = 0}) {
     cents: cents,
     deviation: nearest.deviation,
     stability: 3,
+    crack: crack,
   );
 }
 
@@ -22,6 +23,30 @@ String verdicts(AttemptResult r) => r.notes.map((n) => n.verdict.name).join(' ')
 
 void main() {
   const settings = JudgeSettings();
+
+  test('a cracked attack passes, and the result says so (D48)', () {
+    final r = judgePhrase(ps('P G R S'), [
+      played(700, crack: p("R'")),
+      played(390, at: 30000),
+      played(200, at: 60000),
+      played(0, at: 90000),
+    ], settings);
+    expect(r.passed, isTrue);
+    expect(r.inTune, isTrue);
+    expect(r.cracked, isTrue);
+    expect(r.notes.first.played!.crack, p("R'"));
+    expect(judgePhrase(ps('P'), [played(700)], settings).cracked, isFalse);
+  });
+
+  test('a note split by a breath keeps its first part\'s crack', () {
+    final r = judgePhrase(ps('P G'), [
+      played(700, crack: p("R'")),
+      played(702, at: 30000),
+      played(390, at: 60000),
+    ], settings);
+    expect(verdicts(r), 'pass pass');
+    expect(r.notes.first.played!.crack, p("R'"));
+  });
 
   group('single swar', () {
     test('pass, out of tune, wrong swar (docs/05)', () {

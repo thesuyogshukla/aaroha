@@ -1,0 +1,16 @@
+take: cracked-attacks
+flute: 'G medium'
+recorded: 2026-11-24
+seconds: 21.1
+sa_hz: 393.02
+sa_calibrated: true
+drone: true
+drone_volume: 0.50
+drone_first_string: pa
+drone_filter: true
+input_preset: unprocessed
+backend: AAudio
+phone: 'moto g45 5G'
+source_file: 'sessions 33 round 15 try 1, 34 round 10 try 1, 35 round 9 try 5 (listening windows, raga practice, Bhupali)'
+played: "P G R S , P G R S , G P D P G R S"
+notes: "Each P is tongued hard and cracks into the third mode of its fingering (about 875 Hz, near taar Re) for 180-230 ms before settling on P, checked in the spectrum: the 875 Hz partial is 16-20 dB above P's during the crack. The second also starts on mandra Pa for 120 ms. The phone judged each as an extra taar Re (D48)."

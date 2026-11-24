@@ -728,6 +728,7 @@ class PracticeController extends Notifier<PracticeState?> {
             'onset': n.onset,
             'end': n.end,
             'deviation': double.parse(n.deviation.toStringAsFixed(1)),
+            'crack': ?n.crack?.ascii,
           },
       ],
     });
@@ -890,5 +891,7 @@ List<Map<String, Object?>> attemptToJson(AttemptResult r) => [
       'verdict': n.verdict.name,
       'played': n.played?.pitch.ascii,
       'deviation': n.deviation == null ? null : double.parse(n.deviation!.toStringAsFixed(1)),
+      // The swar a cracked attack touched first (D48); absent when clean.
+      'crack': ?n.played?.crack?.ascii,
     },
 ];
