@@ -126,6 +126,8 @@ As built (D45): a *Sound delay* row under the rhythm settings on Home (when the 
 
 Acceptance: onsets within 30 ms of the labels on the new fixtures; repeated swars split correctly at least 9 times in 10.
 
+Built so far (D46): the recording tool and the measuring stick. Test tools has five rhythm takes in keherwa (docs/07, Rhythm takes), each with a tempo choice of 60 or 90, *Hear it*, and *Record with count-in*, which plays the metronome while recording, stops by itself and labels where sam and every click fell. `fixture_runner rhythm` scores each take's detected onsets against that timing and the stored sound delay. A dry run on the moto g45, without the flute, found all 22 clicks in the recording exactly where the label put them, 421 ms late, matching the measured sound delay. Waiting on: the owner recording the ten takes. The onset detector is tuned on those.
+
 ### E. Rhythm practice
 - A **Rhythm** mode: phrases with mixed note lengths in keherwa and dadra, then teentaal and rupak. Alankars gain rhythmic forms (for example `S- RG m- PD`).
 - Judging follows docs/05 §5: each note's onset against where it should fall, in fractions of a matra (±15% to start), and tempo drift reported as "rushing" or "dragging".

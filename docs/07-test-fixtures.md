@@ -108,6 +108,26 @@ Float WAV at 48 kHz is about 11 MB per minute. Use **Git LFS** for `fixtures/**/
 
 `AAROHA_NOTATION_OUT=<file.png> FLUTTER_ROOT=<flutter> flutter test test/notation_preview_test.dart` (in `app/`) draws a sheet of timed phrases with the app's sargam widget: Latin on a light theme beside Devanagari on a dark one, plus verdict colours. Useful for changing how rhythm is drawn without a phone (docs/03, Rendering).
 
+## Rhythm takes (M3-D)
+
+Recorded in Test tools like the other takes, to the metronome, for tuning onset detection (docs/08 M3-D). Five takes, all keherwa, each recorded at **60** and at **90** matras a minute:
+
+| Take | Notation | Checks |
+|---|---|---|
+| `rhythm-steps` | `S R G m \| P D N S' \|\| S' N D P \| m G R S \|\|` | one swar per matra |
+| `rhythm-holds` | `S - R G \| m - - - \|\| P - m G \| R - S - \|\|` | long and short notes |
+| `rhythm-halves` | `SR GR S - \| RG mG R - \|\| Gm Pm G - \| RG RS S - \|\|` | two swars in a matra |
+| `rhythm-repeats` | `S S S S \| R R R R \|\| G G G G \| S - - - \|\|` | repeated swars, tongued |
+| `rhythm-repeats-fast` | `SS SS RR RR \| GG GG S - \|\|` | repeated swars, two to a matra |
+
+How to record one:
+- Calibrate Sa in Test tools first (the card at the top), with the drone off. Measure the sound delay once (the *Sound delay* card) if it hasn't been.
+- Pick the take and the tempo. *Hear it* plays the phrase on the flute voice over the click, after a count-in.
+- *Record with count-in*: four clicks count you in; start on the next click (sam) and play with the click. The metronome runs two matras past the end and recording stops by itself.
+- Phone on a stand about 30 cm away, speaker towards you, as for practice. A mistake is fine: say so in the label's `notes`, or record again (a second take is saved as `-2`).
+
+The label adds `rhythm` (the notation), `taal`, `tempo`, `sam_frame` and `click_frames` (sample positions in this WAV where sam and each click were played) and `sound_delay_ms` (the stored speaker delay), plus `count_repeats` for the repeat takes. `dart run bin/fixture_runner.dart rhythm [dir]` reports, for each take, how many notes were found and how far each onset is from where it should be: sam plus its written position at the tempo, plus the sound delay. The self-test prints the same report for synthetic takes as a baseline (a few ms at both tempos).
+
 ## Sound delay takes
 
 With *Save session audio* on, each sound delay measurement keeps its recording and what was played as `recordings/delay/delay-<time>.wav` and `.json` on the phone. `dart run bin/fixture_runner.dart delay <json>...` (in `tools/fixture_runner`) measures them again on the Mac and prints each click's delay. The self-test also checks the measurement on the engine's own clicks, delayed through a simulated room with the drone playing.

@@ -1,3 +1,5 @@
+import 'package:aaroha_core/aaroha_core.dart';
+
 /// Fixture takes from docs/07-test-fixtures.md. A recording is saved as
 /// `recordings/<flute>/<take>.wav` with a `<take>.yaml` label beside it.
 enum Take {
@@ -31,9 +33,38 @@ enum Take {
     played: "S R G m P , P m G R S , S G R m G P , .N R G R S , S' N D P m G R S",
   ),
   ornaments('ornaments', 'A few meends and kans'),
+
+  // Rhythm takes (docs/08 M3-D): played to the metronome after a count-in,
+  // in keherwa, at the tempo picked. The label records where every matra
+  // fell, so onsets can be checked.
+  rhythmSteps(
+    'rhythm-steps',
+    'One swar on each click, up and down',
+    rhythm: "S R G m | P D N S' || S' N D P | m G R S ||",
+  ),
+  rhythmHolds(
+    'rhythm-holds',
+    'Long and short notes: hold through the dashes',
+    rhythm: 'S - R G | m - - - || P - m G | R - S - ||',
+  ),
+  rhythmHalves(
+    'rhythm-halves',
+    'Two swars to a click where they share a matra',
+    rhythm: 'SR GR S - | RG mG R - || Gm Pm G - | RG RS S - ||',
+  ),
+  rhythmRepeats(
+    'rhythm-repeats',
+    'Repeated swars, each one tongued, one on each click',
+    rhythm: 'S S S S | R R R R || G G G G | S - - - ||',
+  ),
+  rhythmRepeatsFast(
+    'rhythm-repeats-fast',
+    'Repeated swars, two to a click, each tongued',
+    rhythm: 'SS SS RR RR | GG GG S - ||',
+  ),
   other('other', 'Anything else: say what in the label');
 
-  const Take(this.id, this.instructions, {this.played});
+  const Take(this.id, this.instructions, {this.played, this.rhythm});
 
   /// File name without extension.
   final String id;
@@ -44,4 +75,16 @@ enum Take {
   /// Expected notes in ASCII notation (docs/03), when the take has a fixed
   /// sequence. Others are left for the owner to fill in.
   final String? played;
+
+  /// For a rhythm take: the phrase with its durations (docs/03), played to
+  /// the metronome from sam.
+  final String? rhythm;
+
+  /// The swars of the take in order: [played], or the [rhythm]'s pitches.
+  String? get notes =>
+      played ??
+      (rhythm == null ? null : parsePhrase(rhythm!).pitches.map((p) => p.ascii).join(' '));
+
+  /// Repeated swars must each count as a note.
+  bool get countRepeats => this == repeats || this == rhythmRepeats || this == rhythmRepeatsFast;
 }

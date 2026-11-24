@@ -6,6 +6,7 @@ import 'package:aaroha_audio/aaroha_audio.dart';
 import 'package:aaroha_core/aaroha_core.dart';
 
 import '../audio/sound_delay_tile.dart';
+import '../widgets/sargam.dart';
 import 'debug_controller.dart';
 import 'pitch_trace.dart';
 import 'takes.dart';
@@ -402,6 +403,40 @@ class _RecordCardState extends State<_RecordCard> {
                   : (t) => t == null ? null : widget.controller.selectTake(t),
             ),
             Text(state.take.instructions, style: text.bodyMedium),
+            if (state.rhythmPhrase != null) ...[
+              const SizedBox(height: 8),
+              PhraseSargam(state.rhythmPhrase!, size: 24),
+              const SizedBox(height: 8),
+              Text(
+                'Keherwa. Four clicks count you in; start on the next click (sam). '
+                'Recording stops by itself.',
+                style: text.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  SegmentedButton<int>(
+                    showSelectedIcon: false,
+                    segments: const [
+                      ButtonSegment(value: 60, label: Text('60 a minute')),
+                      ButtonSegment(value: 90, label: Text('90')),
+                    ],
+                    selected: {state.tempo},
+                    onSelectionChanged: since != null
+                        ? null
+                        : (v) => widget.controller.setTempo(v.first),
+                  ),
+                  TextButton.icon(
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('Hear it'),
+                    onPressed: running && since == null ? widget.controller.hearTake : null,
+                  ),
+                ],
+              ),
+            ],
             for (final w in warnings)
               Text(
                 '⚠ $w',
@@ -412,7 +447,13 @@ class _RecordCardState extends State<_RecordCard> {
               children: [
                 FilledButton.icon(
                   icon: Icon(since == null ? Icons.fiber_manual_record : Icons.stop),
-                  label: Text(since == null ? 'Record raw' : 'Stop'),
+                  label: Text(
+                    since != null
+                        ? 'Stop'
+                        : state.rhythmPhrase != null
+                        ? 'Record with count-in'
+                        : 'Record raw',
+                  ),
                   style: FilledButton.styleFrom(
                     backgroundColor: since == null ? null : Theme.of(context).colorScheme.error,
                   ),

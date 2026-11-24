@@ -8,6 +8,7 @@
 //   dart run bin/fixture_runner.dart export <…-session-N.jsonl> <dir>   (attempts for trace previews)
 //   dart run bin/fixture_runner.dart clickcheck [dir]   (the fixtures with metronome clicks mixed in)
 //   dart run bin/fixture_runner.dart delay <delay-….json>...   (sound delay takes pulled from a phone)
+//   dart run bin/fixture_runner.dart rhythm [dir]   (onsets of rhythm takes against their timing)
 //   dart run bin/fixture_runner.dart intonation <…-session-N.jsonl>... [--csv <file>]
 //
 // Exit code is non-zero when a required check fails.
@@ -18,6 +19,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:fixture_runner/native.dart';
+import 'package:fixture_runner/rhythm.dart';
 import 'package:fixture_runner/session.dart';
 import 'package:fixture_runner/export.dart';
 import 'package:fixture_runner/intonation.dart';
@@ -32,7 +34,7 @@ void main(List<String> args) {
   if (args.isEmpty) {
     stderr.writeln(
       'usage: fixture_runner selftest | analyze <wav> [...] | check [dir] | clickcheck [dir] | '
-      'delay <json>... | '
+      'delay <json>... | rhythm [dir] | '
       'session <log.jsonl> '
       '| export <log.jsonl> <dir> | intonation <log.jsonl>... [--csv <file>]',
     );
@@ -45,6 +47,7 @@ void main(List<String> args) {
     'check' => check(core, args.length > 1 ? args[1] : '${repoRoot()}/fixtures'),
     'clickcheck' => clickCheck(core, args.length > 1 ? args[1] : '${repoRoot()}/fixtures'),
     'delay' => soundDelay(args.skip(1).toList()),
+    'rhythm' => rhythmTakes(core, args.length > 1 ? args[1] : '${repoRoot()}/fixtures'),
     'session' => replaySession(core, args[1]),
     'export' => exportAttempts(core, args[1], args[2]),
     'intonation' => intonationReport(core, [
@@ -183,6 +186,7 @@ bool selftest(NativeCore core) {
   if (!_voiceSelftest(core, targets)) allOk = false;
   if (!_clickSelftest(core, targets, detunes)) allOk = false;
   if (!_delaySelftest(core)) allOk = false;
+  _rhythmBaseline(core);
   stdout.writeln('\n${allOk ? 'All required checks passed.' : 'Some required checks FAILED.'}');
   return allOk;
 }
@@ -329,6 +333,90 @@ bool _delaySelftest(NativeCore core) {
     );
   }
   return ok;
+}
+
+/// Informational (docs/08 M3-D): how close the segmenter's note onsets come
+/// to the written timing on synthetic rhythm takes, before onset detection
+/// is tuned on real ones.
+void _rhythmBaseline(NativeCore core) {
+  stdout.writeln('\nRhythm baseline (synthetic, G medium, segmenter onsets; information only)');
+  const sa = 391.08;
+  const takes = {
+    'steps': "S R G m | P D N S' || S' N D P | m G R S ||",
+    'holds': 'S - R G | m - - - || P - m G | R - S - ||',
+    'halves': 'SR GR S - | RG mG R - || Gm Pm G - | RG RS S - ||',
+  };
+  for (final tempo in [60, 90]) {
+    for (final MapEntry(key: name, value: text) in takes.entries) {
+      final phrase = parsePhrase(text);
+      final r = synthesizeRhythm(phrase, sa, sampleRate, tempo: tempo);
+      final frames = core.analyze(
+        r.synth.samples,
+        sampleRate,
+        highpassHz: highpassFor(sa),
+        minHz: minHzFor(sa),
+      );
+      final notes = segmentNotes(frames, saHz: sa, tuning: Tuning.just);
+      final report = scoreOnsets(
+        notes,
+        phrase,
+        samFrame: r.samFrame,
+        matraFrames: 60 / tempo * sampleRate,
+        delayFrames: 0,
+        sampleRate: sampleRate,
+      );
+      stdout.writeln('  ${'$name $tempo'.padRight(11)} $report');
+    }
+  }
+}
+
+/// Rhythm takes (docs/08 M3-D): each note's detected onset against where
+/// it should fall: the label's sam, the written timing and tempo, and the
+/// sound delay measured on the phone. Information until onset detection is
+/// tuned; always returns true.
+bool rhythmTakes(NativeCore core, String dir) {
+  final labels = Directory(dir).existsSync()
+      ? (Directory(dir)
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.yaml'))
+            .toList()
+          ..sort((a, b) => a.path.compareTo(b.path)))
+      : <File>[];
+  var found = 0;
+  for (final label in labels) {
+    final yaml = loadYaml(label.readAsStringSync());
+    if (yaml is! YamlMap || yaml['rhythm'] == null || yaml['sam_frame'] == null) continue;
+    found++;
+    final wav = readWav(label.path.replaceAll(RegExp(r'\.yaml$'), '.wav'));
+    final sa = _fixtureSa(core, label, yaml);
+    final highpass = (yaml['drone_filter'] ?? yaml['drone']) == true;
+    final frames = core.analyze(
+      wav.samples,
+      wav.sampleRate,
+      highpassHz: highpass ? highpassFor(sa) : 0,
+      minHz: highpass ? minHzFor(sa) : null,
+    );
+    final notes = segmentNotes(
+      frames,
+      saHz: sa,
+      config: SegmenterConfig(sampleRate: wav.sampleRate, floorCents: -600),
+    );
+    final tempo = (yaml['tempo'] as num).toDouble();
+    final delayMs = (yaml['sound_delay_ms'] as num?)?.toDouble() ?? 0;
+    final report = scoreOnsets(
+      notes,
+      parsePhrase('${yaml['rhythm']}'),
+      samFrame: yaml['sam_frame'] as int,
+      matraFrames: 60 / tempo * wav.sampleRate,
+      delayFrames: (delayMs * wav.sampleRate / 1000).round(),
+      sampleRate: wav.sampleRate,
+    );
+    stdout.writeln('${label.path.substring(dir.length + 1)} (${tempo.round()} a minute): $report');
+    stdout.writeln('    each: ${report.errorsMs.map((e) => e.round()).join(' ')} ms');
+  }
+  if (found == 0) stdout.writeln('No rhythm takes in $dir yet (docs/07, Rhythm takes).');
+  return true;
 }
 
 /// Measures again, on the host, sound delay takes the app kept (docs/08

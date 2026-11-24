@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -9,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import '../audio/audio_service.dart';
 import '../audio/sa_calibrator.dart';
 
+import '../data/providers.dart';
 import 'takes.dart';
 
 enum EngineStatus { stopped, starting, running, permissionDenied, error }
@@ -37,6 +39,7 @@ class DebugState {
     this.recordingSince,
     this.lastRecording,
     this.take = Take.saHold,
+    this.tempo = 60,
   });
 
   final EngineStatus status;
@@ -67,6 +70,13 @@ class DebugState {
   /// Which fixture take the next recording is.
   final Take take;
 
+  /// Matras a minute for a rhythm take (docs/08 M3-D).
+  final int tempo;
+
+  /// The rhythm take's phrase, in keherwa.
+  Phrase? get rhythmPhrase =>
+      take.rhythm == null ? null : parsePhrase('taal: keherwa\n---\n${take.rhythm}');
+
   double? get cents => hz == null ? null : centsFromSa(hz!, saHz);
 
   DebugState copyWith({
@@ -89,6 +99,7 @@ class DebugState {
     DateTime? Function()? recordingSince,
     String? lastRecording,
     Take? take,
+    int? tempo,
   }) => DebugState(
     status: status ?? this.status,
     error: error ?? this.error,
@@ -109,6 +120,7 @@ class DebugState {
     recordingSince: recordingSince != null ? recordingSince() : this.recordingSince,
     lastRecording: lastRecording ?? this.lastRecording,
     take: take ?? this.take,
+    tempo: tempo ?? this.tempo,
   );
 }
 
@@ -193,6 +205,91 @@ class DebugController extends Notifier<DebugState> {
 
   void selectTake(Take take) => state = state.copyWith(take: take);
 
+  void setTempo(int tempo) => state = state.copyWith(tempo: tempo);
+
+  /// Where a rhythm take's clicks and sam fell, in engine frames.
+  ({List<ScheduledClick> clicks, int sam, double? soundDelayMs})? _rhythm;
+  Timer? _autoStop;
+
+  static int _matras(Phrase p) {
+    final l = p.length;
+    return l.isInteger ? l.numerator : l.floor() + 1;
+  }
+
+  /// Plays a rhythm take's phrase on the flute voice over the metronome,
+  /// after a count-in, so the player hears how it goes.
+  void hearTake() {
+    final phrase = state.rhythmPhrase;
+    if (phrase == null || !_audio.running || state.recordingSince != null) return;
+    final sr = _audio.sampleRate;
+    final matra = 60 / state.tempo;
+    final length = _matras(phrase);
+    final plan = roundClicks(
+      callMatras: length,
+      responseMatras: 0,
+      taal: Taal.keherwa,
+      metronome: true,
+      countIn: true,
+    );
+    final origin = _audio.time + (0.3 * sr).round();
+    _audio.playClicks(
+      scheduleClicks(
+        [
+          for (final c in plan.clicks)
+            if (c.matra < plan.callAt + length) c,
+        ],
+        start: origin,
+        sampleRate: sr,
+        matraSeconds: matra,
+      ),
+    );
+    _audio.play(
+      scheduleCall(
+        phrase,
+        saHz: state.saHz,
+        start: origin + (plan.callAt * matra * sr).round(),
+        sampleRate: sr,
+        matraSeconds: matra,
+        tuning: Tuning.just,
+      ).notes,
+    );
+  }
+
+  /// A rhythm take: a count-in, then the metronome through the phrase and
+  /// two matras more; recording stops by itself after the last click.
+  Future<void> _startRhythm(Phrase phrase) async {
+    final raw = await ref.read(databaseProvider).setting('sound_delay_speaker');
+    double? delayMs;
+    try {
+      delayMs = raw == null ? null : ((jsonDecode(raw) as Map)['ms'] as num).toDouble();
+    } on Object {
+      delayMs = null;
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    if (state.recordingSince == null) return;
+    final sr = _audio.sampleRate;
+    final matra = 60 / state.tempo;
+    final plan = retryClicks(
+      responseMatras: _matras(phrase) + 2,
+      taal: Taal.keherwa,
+      metronome: true,
+      countIn: true,
+    );
+    final origin = _audio.time + (0.4 * sr).round();
+    final clicks = scheduleClicks(plan.clicks, start: origin, sampleRate: sr, matraSeconds: matra);
+    _audio.playClicks(clicks);
+    _rhythm = (
+      clicks: clicks,
+      sam: origin + (plan.responseAt * matra * sr).round(),
+      soundDelayMs: delayMs,
+    );
+    final end = clicks.last.time + (1.5 * sr).round();
+    _autoStop = Timer(
+      Duration(microseconds: ((end - _audio.time) * 1e6 / sr).round()),
+      stopRecording,
+    );
+  }
+
   /// Records to `recordings/<flute>/<take>.wav`, adding -2, -3… rather than
   /// overwriting an earlier take.
   Future<void> startRecording() async {
@@ -209,7 +306,10 @@ class DebugController extends Notifier<DebugState> {
     try {
       _audio.startRecording(path);
       _recordingSnapshot = state;
+      _rhythm = null;
       state = state.copyWith(recordingSince: () => DateTime.now(), lastRecording: path);
+      final phrase = state.rhythmPhrase;
+      if (phrase != null) await _startRhythm(phrase);
     } on AudioEngineException catch (e) {
       state = state.copyWith(message: '$e');
     }
@@ -217,10 +317,14 @@ class DebugController extends Notifier<DebugState> {
 
   void stopRecording() {
     final path = state.lastRecording;
-    if (path == null) return;
+    if (path == null || state.recordingSince == null) return;
+    _autoStop?.cancel();
+    _autoStop = null;
+    _audio.stopClicks();
+    final start = _audio.recordingStart;
     final frames = _audio.stopRecording();
     final seconds = frames / (state.info?.sampleRate ?? 48000);
-    _writeLabel(path, seconds, _recordingSnapshot ?? state);
+    _writeLabel(path, seconds, _recordingSnapshot ?? state, recordingStart: start);
     state = state.copyWith(
       recordingSince: () => null,
       message: 'Saved ${seconds.toStringAsFixed(1)} s',
@@ -229,10 +333,12 @@ class DebugController extends Notifier<DebugState> {
 
   /// Label file next to the WAV (docs/07-test-fixtures.md), with the settings
   /// as they were when recording started.
-  void _writeLabel(String wavPath, double seconds, DebugState s) {
+  void _writeLabel(String wavPath, double seconds, DebugState s, {int? recordingStart}) {
     final info = s.info;
     String q(String v) => "'${v.replaceAll("'", "''")}'";
-    final played = s.take.played;
+    final played = s.take.notes;
+    final rhythm = _rhythm;
+    final first = recordingStart ?? 0;
     final lines = [
       'take: ${s.take.id}',
       'flute: ${q(s.flute.name)}',
@@ -251,6 +357,16 @@ class DebugController extends Notifier<DebugState> {
         'played: ${q(played)}'
       else
         '# played: fill in the notes, docs/03 notation',
+      if (s.take.countRepeats) 'count_repeats: true',
+      if (s.take.rhythm != null && rhythm != null) ...[
+        // Frames are samples from the start of this WAV (docs/08 M3-D).
+        'rhythm: ${q(s.take.rhythm!)}',
+        'taal: keherwa',
+        'tempo: ${s.tempo}',
+        'sam_frame: ${rhythm.sam - first}',
+        'click_frames: [${rhythm.clicks.map((c) => c.time - first).join(', ')}]',
+        'sound_delay_ms: ${rhythm.soundDelayMs ?? 'null'}',
+      ],
       'notes: ""',
     ];
     try {
