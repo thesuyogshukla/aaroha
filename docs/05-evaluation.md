@@ -35,9 +35,10 @@ For each note:
 
 **Repeated swars** (S S S) produce no pitch change. Split a run into separate notes when:
 - a **quiet** gap of unvoiced frames ≥ 40 ms appears (tonguing, breath articulation; quiet = rms below 40% of the recent peak), or
-- the level **dips ≥ 16 dB** below the recent peak (the last 300 ms) for at least 20 ms **and then comes back** to within 6 dB of it. The next note starts where the level recovers.
+- the level **dips ≥ 16 dB** below the recent peak (the last 300 ms) for at least 20 ms **and then comes back** to within 6 dB of it. The next note starts where the level recovers;
+- or, during such a dip, the pitch moves to **another swar** (beyond the 15 c hysteresis), however soft. A quieter note after a re-articulation starts there rather than becoming the last note's tail (D51).
 
-Frames inside a dip are the note's **tail**: they extend its duration but don't count toward its pitch and can't start a new note. A dip that never recovers (a fade at the end of a breath) just ends the note. A dip lasting over 400 ms is taken as the player's new level, not an articulation.
+Frames inside a dip on the same swar are the note's **tail**: they extend its duration but don't count toward its pitch and can't start a new note. A dip that never recovers (a fade at the end of a breath) just ends the note. A dip lasting over 400 ms is taken as the player's new level, not an articulation.
 
 The 16 dB depth comes from real recordings: the owner's breath pulse swings the level 10–12 dB two or three times a second while the pitch stays steady, and the earlier 8 dB rule split those notes into many. Repeated-note splitting is still a known weak spot: check it with the `repeats` fixtures.
 

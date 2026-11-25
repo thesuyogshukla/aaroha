@@ -303,6 +303,10 @@ class DebugController extends Notifier<DebugState> {
       name = '${state.take.id}-$n';
     }
     final path = '${dir.path}/$name.wav';
+    // A take is only the player: stop a Hear it that is still playing, so
+    // the flute voice and its clicks don't end up in the recording.
+    _audio.stopPlayback();
+    _audio.stopClicks();
     try {
       _audio.startRecording(path);
       _recordingSnapshot = state;

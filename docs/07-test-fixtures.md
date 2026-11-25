@@ -131,7 +131,7 @@ Recorded in Test tools like the other takes, to the metronome, for tuning onset 
 How to record one:
 - Calibrate Sa in Test tools first (the card at the top), with the drone off. Measure the sound delay once (the *Sound delay* card) if it hasn't been.
 - Pick the take and the tempo. *Hear it* plays the phrase on the flute voice over the click, after a count-in.
-- *Record with count-in*: four clicks count you in; start on the next click (sam) and play with the click. The metronome runs two matras past the end and recording stops by itself.
+- *Record with count-in*: four clicks count you in; start on the next click (sam) and play the phrase yourself on the flute, with the click. Only the clicks play while recording: Record stops a *Hear it* still playing, so the app's flute voice can't end up in the take. (The first ten takes, 2026-11-25, held only *Hear it* playback and were set aside.) The metronome runs two matras past the end and recording stops by itself.
 - Phone on a stand about 30 cm away, speaker towards you, as for practice. A mistake is fine: say so in the label's `notes`, or record again (a second take is saved as `-2`).
 
 The label adds `rhythm` (the notation), `taal`, `tempo`, `sam_frame` and `click_frames` (sample positions in this WAV where sam and each click were played) and `sound_delay_ms` (the stored speaker delay), plus `count_repeats` for the repeat takes. `dart run bin/fixture_runner.dart rhythm [dir]` reports, for each take, how many notes were found and how far each onset is from where it should be: sam plus its written position at the tempo, plus the sound delay. The self-test prints the same report for synthetic takes as a baseline (a few ms at both tempos).

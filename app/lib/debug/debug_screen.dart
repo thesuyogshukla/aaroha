@@ -408,8 +408,9 @@ class _RecordCardState extends State<_RecordCard> {
               PhraseSargam(state.rhythmPhrase!, size: 24),
               const SizedBox(height: 8),
               Text(
-                'Keherwa. Four clicks count you in; start on the next click (sam). '
-                'Recording stops by itself.',
+                'Keherwa. Hear it plays the phrase for you to learn. To record, play it '
+                'yourself on the flute: four clicks count you in, start on the next click '
+                '(sam). Only the clicks play while recording; it stops by itself.',
                 style: text.bodySmall,
               ),
               const SizedBox(height: 8),

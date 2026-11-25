@@ -182,6 +182,27 @@ void main() {
     expect(asciiOf(segmentNotes(b.frames, saHz: sa)), ['N']);
   });
 
+  group('a softer note after a dip (D51)', () {
+    test('is a note, not the last one\'s tail', () {
+      // Session 43: G peaking at -25 dB, a short dip, then a clean D at
+      // -31 dB: it never got back within 6 dB of G and vanished.
+      final b = FrameBuilder()
+        ..note(386, 560, rms: 0.05)
+        ..note(386, 40, rms: 0.004)
+        ..note(884, 340, rms: 0.022)
+        ..note(386, 600, rms: 0.05);
+      expect(asciiOf(segmentNotes(b.frames, saHz: sa)), ['G', 'D', 'G']);
+    });
+
+    test('the same swar coming back softer is still the tail', () {
+      final b = FrameBuilder()
+        ..note(386, 560, rms: 0.05)
+        ..note(386, 40, rms: 0.004)
+        ..note(386, 200, rms: 0.022);
+      expect(asciiOf(segmentNotes(b.frames, saHz: sa)), ['G']);
+    });
+  });
+
   group('a cracked attack (D48)', () {
     test('Pa cracking up a fifth is Pa, with the crack noted', () {
       // Session 33: P tongued hard sounds near taar Re (third mode of the

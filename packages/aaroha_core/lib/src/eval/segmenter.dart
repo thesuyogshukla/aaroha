@@ -226,10 +226,24 @@ List<DetectedNote> segmentNotes(
 
     // A deep loudness dip belongs to the current note's tail. If the level
     // comes back, the player re-articulated and the next note starts there.
+    // So does a different swar during the dip, however soft: a quieter note
+    // after a re-articulation is not the last note's tail (decisions.md D51).
     if (current != null) {
       final inDip = dipReference != null;
       final reference = dipReference ?? recentPeak();
-      if (rms < config.dipRatio * reference || (inDip && rms < config.recoverRatio * reference)) {
+      bool otherSwar() {
+        final run = current!;
+        final nearest = tuning.nearest(c).pitch;
+        if (nearest == run.pitch) return false;
+        final toHeld = (c - tuning.centsOf(run.pitch)).abs();
+        final toNearest = (c - tuning.centsOf(nearest)).abs();
+        return toHeld - toNearest > config.hysteresisCents;
+      }
+
+      final dipping =
+          rms < config.dipRatio * reference || (inDip && rms < config.recoverRatio * reference);
+      final moved = inDip && otherSwar();
+      if (dipping && !moved) {
         dipReference = reference;
         if (++dipFrames < maxDipFrames) {
           current!.tail.add(i);
