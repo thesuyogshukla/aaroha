@@ -7,7 +7,8 @@ enum PracticeMode {
   phrase('Short phrase'),
   alankar('Alankar'),
   raga('Raga'),
-  rhythm('Rhythm');
+  rhythm('Rhythm'),
+  tune('Your tunes');
 
   const PracticeMode(this.label);
   final String label;
@@ -106,6 +107,7 @@ class PracticeSettings {
     this.clickVolume = 0.6,
     this.rhythmLessonId = 'keherwa-1',
     this.strictRhythm = false,
+    this.tuneId,
   });
 
   final PracticeMode mode;
@@ -191,6 +193,10 @@ class PracticeSettings {
   /// (decisions.md D42); on, every note must be on time too.
   final bool strictRhythm;
 
+  /// Your tunes: which tune, by its database id (D56); null before one is
+  /// picked.
+  final int? tuneId;
+
   Taal? get taal => taalId == 'none' ? null : Taal.byId(taalId);
 
   /// The taals offered on Home (docs/08 M3).
@@ -250,6 +256,7 @@ class PracticeSettings {
     double? clickVolume,
     String? rhythmLessonId,
     bool? strictRhythm,
+    int? tuneId,
   }) => PracticeSettings(
     mode: mode ?? this.mode,
     answerBy: answerBy ?? this.answerBy,
@@ -283,6 +290,7 @@ class PracticeSettings {
     clickVolume: clickVolume ?? this.clickVolume,
     rhythmLessonId: rhythmLessonId ?? this.rhythmLessonId,
     strictRhythm: strictRhythm ?? this.strictRhythm,
+    tuneId: tuneId ?? this.tuneId,
   );
 
   Map<String, dynamic> toJson() => {
@@ -318,6 +326,7 @@ class PracticeSettings {
     'clickVolume': clickVolume,
     'rhythmLesson': rhythmLessonId,
     'strictRhythm': strictRhythm,
+    'tuneId': ?tuneId,
   };
 
   factory PracticeSettings.fromJson(Map<String, dynamic> j) {
@@ -364,6 +373,7 @@ class PracticeSettings {
       clickVolume: ((j['clickVolume'] as num?)?.toDouble() ?? d.clickVolume).clamp(0.0, 1.0),
       rhythmLessonId: j['rhythmLesson'] as String? ?? d.rhythmLessonId,
       strictRhythm: j['strictRhythm'] as bool? ?? d.strictRhythm,
+      tuneId: j['tuneId'] as int?,
     );
   }
 }
@@ -393,6 +403,7 @@ String sessionLabel(String settingsJson) {
     PracticeMode.alankar => s.ragaInUse == null ? 'alankar' : 'alankar in ${title(s.ragaInUse!)}',
     PracticeMode.raga => 'raga ${title(s.ragaId)}',
     PracticeMode.rhythm => 'rhythm, ${s.rhythmLessonId.replaceAll('-', ' ')}',
+    PracticeMode.tune => 'your tune',
   };
   return s.naming ? '$what · named' : what;
 }

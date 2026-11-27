@@ -4,6 +4,7 @@ library;
 export 'src/audio/wav.dart';
 export 'src/content/raga.dart';
 export 'src/content/rhythm_lesson.dart';
+export 'src/content/tune.dart';
 export 'src/eval/hint.dart';
 export 'src/eval/judge.dart';
 export 'src/eval/latency.dart';

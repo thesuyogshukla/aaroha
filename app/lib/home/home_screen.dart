@@ -7,6 +7,7 @@ import '../data/content.dart';
 import '../data/database.dart';
 import '../data/phrase_level.dart';
 import '../data/providers.dart';
+import '../data/tunes.dart';
 import '../debug/debug_screen.dart';
 import '../flutes/calibration_sheet.dart';
 import '../flutes/flutes_screen.dart';
@@ -14,6 +15,7 @@ import '../practice/practice_controller.dart';
 import '../practice/practice_screen.dart';
 import '../practice/practice_settings.dart';
 import '../stats/stats_screen.dart';
+import '../tunes/tunes_screen.dart';
 import 'history_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -23,6 +25,10 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final flute = ref.watch(selectedFluteProvider);
     final settings = ref.watch(practiceSettingsProvider).value;
+    // Your tunes needs a tune that parses before it can start.
+    final noTune =
+        settings?.mode == PracticeMode.tune &&
+        !(ref.watch(tunesProvider).value ?? const []).any((t) => t.parsed != null);
     void open(Widget screen) =>
         Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
 
@@ -70,10 +76,12 @@ class HomeScreen extends ConsumerWidget {
                         ? 'Start · up and down'
                         : 'Start · ${settings.rounds} rounds',
                   ),
-                  onPressed: () {
-                    ref.read(practiceProvider.notifier).start(flute, settings);
-                    open(const PracticeScreen());
-                  },
+                  onPressed: noTune
+                      ? null
+                      : () {
+                          ref.read(practiceProvider.notifier).start(flute, settings);
+                          open(const PracticeScreen());
+                        },
                 ),
               ),
             ),
@@ -139,6 +147,47 @@ class _FluteCard extends StatelessWidget {
 class _Options extends ConsumerWidget {
   const _Options({required this.settings});
   final PracticeSettings settings;
+
+  /// Modes whose material sets its own octaves.
+  static bool _ownRange(PracticeMode m) =>
+      m == PracticeMode.raga || m == PracticeMode.rhythm || m == PracticeMode.tune;
+
+  /// Your tunes (D56): which tune, and the way to add and change them.
+  static List<Widget> _tunePicker(
+    BuildContext context,
+    WidgetRef ref,
+    PracticeSettings settings,
+    void Function(PracticeSettings) save,
+    Widget Function(String) label,
+  ) {
+    final tunes = ref.watch(tunesProvider).value ?? const <StoredTune>[];
+    void manage() =>
+        Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const TunesScreen()));
+    final playable = [
+      for (final t in tunes)
+        if (t.parsed != null) t,
+    ];
+    return [
+      label('Tune'),
+      if (playable.isEmpty)
+        const Text('No tunes yet. Add one: a bandish, a gat or any tune in sargam.')
+      else
+        DropdownButton<int>(
+          isExpanded: true,
+          value: playable.any((t) => t.id == settings.tuneId) ? settings.tuneId : playable.first.id,
+          items: [for (final t in playable) DropdownMenuItem(value: t.id, child: Text(t.title))],
+          onChanged: (v) => v == null ? null : save(settings.copyWith(tuneId: v)),
+        ),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+          onPressed: manage,
+          icon: Icon(playable.isEmpty ? Icons.add : Icons.edit_note),
+          label: Text(playable.isEmpty ? 'Add a tune' : 'Your tunes'),
+        ),
+      ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -221,6 +270,7 @@ class _Options extends ConsumerWidget {
             (v) => save(settings.copyWith(alankarScale: v)),
           ),
         ],
+        if (settings.mode == PracticeMode.tune) ..._tunePicker(context, ref, settings, save, label),
         if (settings.mode == PracticeMode.raga && content != null) ...[
           label('Raga'),
           dropdown(
@@ -313,8 +363,8 @@ class _Options extends ConsumerWidget {
             (v) => save(settings.copyWith(swarSet: v)),
           ),
         ],
-        if (settings.mode != PracticeMode.raga && !rhythm) label('Octaves'),
-        if (settings.mode != PracticeMode.raga && !rhythm)
+        if (!_ownRange(settings.mode)) label('Octaves'),
+        if (!_ownRange(settings.mode))
           segments(
             [
               (SaptakRange.madhya, 'Madhya'),

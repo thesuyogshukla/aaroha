@@ -55,6 +55,19 @@ class Attempts extends Table {
   DateTimeColumn get createdAt => dateTime()();
 }
 
+/// Tunes the player typed in (docs/06, Compositions; D56). Kept on the phone
+/// only: a tune may be someone else's work, so it is never shipped or shared.
+@DataClassName('StoredTune')
+class Tunes extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get title => text()();
+
+  /// The tune as typed: an optional header, then one line per row (docs/03).
+  TextColumn get notation => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+}
+
 /// Simple key/value settings.
 class Settings extends Table {
   TextColumn get key => text()();
@@ -64,12 +77,13 @@ class Settings extends Table {
   Set<Column> get primaryKey => {key};
 }
 
-@DriftDatabase(tables: [Flutes, Sessions, Rounds, Attempts, Settings])
+@DriftDatabase(tables: [Flutes, Sessions, Rounds, Attempts, Settings, Tunes])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? driftDatabase(name: 'aaroha'));
 
   @override
-  int get schemaVersion => 1;
+  /// 1: M0–M3. 2: tunes (D56).
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -85,6 +99,9 @@ class AppDatabase extends _$AppDatabase {
           ),
         );
       }
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < 2) await m.createTable(tunes);
     },
   );
 

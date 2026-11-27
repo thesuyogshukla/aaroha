@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' show OrderingTerm, Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:aaroha_audio/aaroha_audio.dart';
 import 'package:aaroha_core/aaroha_core.dart';
@@ -14,6 +14,7 @@ import '../data/database.dart';
 import '../data/history.dart';
 import '../data/phrase_level.dart';
 import '../data/providers.dart';
+import '../data/tunes.dart';
 import '../widgets/beat_strip.dart';
 import 'practice_settings.dart';
 import 'session_recorder.dart';
@@ -171,6 +172,7 @@ class PracticeController extends Notifier<PracticeState?> {
   int _level = 1;
   PhraseLevelTracker? _levelTracker;
   RagaDrill? _ragaDrill;
+  TuneDrill? _tuneDrill;
   int? _sessionId;
   SessionRecorder? _recorder;
 
@@ -230,6 +232,7 @@ class PracticeController extends Notifier<PracticeState?> {
     _history = settings.adaptive ? await loadPracticeHistory(_db) : null;
     _levelTracker = null;
     _ragaDrill = null;
+    _tuneDrill = null;
     final rhythm = settings.mode == PracticeMode.rhythm;
     if (settings.mode != PracticeMode.single && !rhythm) {
       if (settings.phraseLevelGrows) {
@@ -395,6 +398,39 @@ class PracticeController extends Notifier<PracticeState?> {
             tuning: tuning,
           ),
           title: raga.name,
+          taal: null,
+        );
+      case PracticeMode.tune:
+        // The chosen tune, or the newest that parses (D56).
+        final stored = await (_db.select(
+          _db.tunes,
+        )..orderBy([(t) => OrderingTerm.desc(t.updatedAt)])).get();
+        final candidates = [
+          for (final t in stored)
+            if (t.parsed != null) t,
+        ];
+        final pick =
+            candidates.where((t) => t.id == settings.tuneId).firstOrNull ?? candidates.firstOrNull;
+        if (pick == null) throw StateError('Add a tune first: Home, Your tunes.');
+        final tune = pick.parsed!;
+        final TuneDrill drill;
+        try {
+          drill = _tuneDrill = TuneDrill(
+            tune,
+            low: flute.low,
+            high: flute.high,
+            tuning: tuning,
+            maxNotes: PhraseLevel.maxNotes(_level),
+          );
+        } on ArgumentError {
+          throw StateError('No line of "${tune.title}" fits ${flute.name}.');
+        }
+        _nextDrill = drill.next;
+        return (
+          raga: null,
+          rounds: null,
+          keypad: {for (final l in tune.lines) ...l.pitches}.toList()..sort(_byPitch),
+          title: tune.title,
           taal: null,
         );
       case PracticeMode.rhythm:
@@ -902,6 +938,7 @@ class PracticeController extends Notifier<PracticeState?> {
     if (change == 0) return;
     _level = tracker.level;
     _ragaDrill?.maxNotes = PhraseLevel.maxNotes(_level);
+    _tuneDrill?.maxNotes = PhraseLevel.maxNotes(_level);
     _recorder?.log('phraseLevel', {'level': _level, 'change': change});
     state = PracticeState(
       phase: s.phase,

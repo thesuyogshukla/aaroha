@@ -111,6 +111,8 @@ lines:
 
 User-entered tunes use the same shape, stored in the database rather than files, with `license: user-private`.
 
+As built (M4, D56): **Your tunes**. A tune is a title plus text as typed: optional `key: value` header lines at the top (`taal`, `tempo`, `raga`; an optional `---` after them), then one line of the tune per row, in the notation of docs/03. Blank rows and `#` comments are skipped. Each row is checked as it is typed, and problems name the row and column. A known `taal` names the tune's taal, but bars aren't checked against it, since a line may start anywhere in the cycle. Tunes live in the `tunes` table on the phone only, are never bundled, and so carry no licence field: they may be someone else's work (CLAUDE.md rule 9).
+
 ## Rhythm lessons
 
 ```yaml
