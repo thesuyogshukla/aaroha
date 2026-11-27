@@ -114,6 +114,24 @@ lines:
 
 User-entered tunes use the same shape, stored in the database rather than files, with `license: user-private`.
 
+## Rhythm lessons
+
+```yaml
+# content/rhythm/keherwa.yaml
+taal: keherwa
+source: original, written for Aaroha
+license: original
+lessons:
+  - id: keherwa-1
+    name: Steps and holds
+    phrases:
+      - "S R G m"
+      - "S - R -"
+      …
+```
+
+As built (M3-E, D53): one file per taal, `keherwa.yaml` (steps and holds, holds across the avartan, two swars in a matra, rests, repeated swars, alankars in rhythm) and `dadra.yaml` (steps and holds, two swars in a matra), 60 phrases in all, written for Aaroha. Each phrase is one vibhag or one avartan, ends on a vibhag (checked against the taal), and has at least two notes. They move mostly by step between madhya Sa and Pa, so the attention goes on the timing. A session plays its lesson's phrases in order, then at random without the same one twice in a row. Phrases aren't cut to the phrase level: their length is part of the rhythm. Teentaal and rupak lessons come next.
+
 ## Content for each mode
 
 | Mode | Content |
@@ -122,5 +140,5 @@ User-entered tunes use the same shape, stored in the database rather than files,
 | Short phrase | random walk over the swar set with small steps, or raga chalan fragments |
 | Alankar | alankar × swar set |
 | Raga | aaroh, avaroh, pakad, chalan; then generated phrases |
-| Rhythm | rhythmic alankars, then composition lines |
+| Rhythm | rhythm lessons (keherwa, dadra), including alankars in rhythm; composition lines later |
 | Composition | full lines, one at a time, then whole avartans |

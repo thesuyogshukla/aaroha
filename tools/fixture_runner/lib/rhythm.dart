@@ -63,61 +63,15 @@ class OnsetReport {
       '$matched/$expected notes matched ($detected detected); onset error median '
           '${medianAbsMs.toStringAsFixed(0)} ms (${(100 * medianAbsMs / matraMs).toStringAsFixed(0)}% '
           'of a matra), bias ${_ms(biasMs)} ms, worst ${worstMs.toStringAsFixed(0)} ms',
-      if (fit != null) '    player: $fit',
+      if (fit != null)
+        '    player: ${fit!.driftLabel}, first note ${_ms(fit!.offset)} ms, notes within '
+            '${fit!.scatter.toStringAsFixed(0)} ms (median) of that line',
       if (detectorMs.isNotEmpty)
         '    detector against the pitch rise: median ${detectorMedianMs.toStringAsFixed(0)} ms, '
             '90% within ${detectorP90Ms.toStringAsFixed(0)} ms, bias '
             '${_ms(_quantile(detectorMs, 0.5))} ms',
     ];
     return lines.join('\n');
-  }
-}
-
-/// A straight line through (written, played) onsets (docs/05 §5, tempo
-/// drift). [tempoRatio] above 1 means the player's matras were shorter than
-/// the click's: rushing.
-class TempoFit {
-  const TempoFit({required this.tempoRatio, required this.offsetMs, required this.scatterMs});
-
-  /// Fits played = a + b × written over the pairs (milliseconds).
-  static TempoFit? of(List<double> writtenMs, List<double> playedMs) {
-    final n = writtenMs.length;
-    if (n < 3) return null;
-    final mx = writtenMs.reduce((a, b) => a + b) / n;
-    final my = playedMs.reduce((a, b) => a + b) / n;
-    var sxx = 0.0, sxy = 0.0;
-    for (var i = 0; i < n; i++) {
-      sxx += (writtenMs[i] - mx) * (writtenMs[i] - mx);
-      sxy += (writtenMs[i] - mx) * (playedMs[i] - my);
-    }
-    if (sxx == 0) return null;
-    final b = sxy / sxx;
-    final a = my - b * mx;
-    final residuals = [for (var i = 0; i < n; i++) (playedMs[i] - a - b * writtenMs[i]).abs()]
-      ..sort();
-    return TempoFit(
-      tempoRatio: 1 / b,
-      offsetMs: a + (b - 1) * writtenMs.first,
-      scatterMs: residuals[(n - 1) ~/ 2],
-    );
-  }
-
-  final double tempoRatio;
-
-  /// Where the line puts the first note, against its written place.
-  final double offsetMs;
-
-  /// Median distance of the notes from the line.
-  final double scatterMs;
-
-  @override
-  String toString() {
-    final pct = (tempoRatio - 1) * 100;
-    final drift = pct.abs() < 1
-        ? 'steady tempo'
-        : '${pct > 0 ? 'rushing' : 'dragging'} ${pct.abs().toStringAsFixed(1)}%';
-    return '$drift, first note ${offsetMs >= 0 ? '+' : ''}${offsetMs.toStringAsFixed(0)} ms, '
-        'notes within ${scatterMs.toStringAsFixed(0)} ms (median) of that line';
   }
 }
 

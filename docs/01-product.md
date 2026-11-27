@@ -32,7 +32,7 @@ Traditionally that someone is the guru. Aaroha does the repetitive part of that 
 | **Short phrase** | 2–4 notes, equal length, pitch judged only | v0.1 |
 | **Alankar** | Classic patterns (paltas) generated over a chosen scale: shuddha, a swar set, or a raga (aaroh up, avaroh down). One walk up and down, a few notes per round | v0.2 (M2-D) |
 | **Raga** | Aaroh, avaroh, pakad and chalan phrases of a raga, the drone tuned for it | v0.2 (fixed phrases, M2-D), v0.4 (generated) |
-| **Rhythm** | Phrases with different note lengths, in a taal, over a metronome; tabla theka later | v0.3 (metronome), v0.4 (theka) |
+| **Rhythm** | Lessons of phrases with holds, halves, rests and repeated swars, in keherwa and dadra, over the metronome. Timing is judged per note and reported (early, late, held too short, rushing or dragging); tabla theka later | v0.3 (M3-E), v0.4 (theka) |
 | **Composition** | Lines of a bandish/gat or a user-entered tune | v0.4 |
 | **Listen & name** | One note or a short phrase; you tap the swar names instead of playing. Ear only: no flute, no mic, usable anywhere with headphones | v0.2 (M2-B) |
 
@@ -85,14 +85,14 @@ The user has several flutes. Each has a **profile** (name, nominal Sa, calibrate
 | Metronome *(M3-B)* | Off | A click on every matra of the call and your turn. Played phrases only |
 | Taal *(M3-B)* | No taal | Keherwa 4+4, Dadra 3+3, Teentaal 4+4+4+4 or Rupak 3+2+2: the clicks mark sam, tali and khali. Shown when the metronome or the count-in is on |
 | Click volume *(M3-B)* | 0.6 | |
+| Lesson *(M3-E)* | Keherwa · Steps and holds | Rhythm mode: which lesson (docs/06). Rhythm always clicks every matra, in the lesson's taal, and is always played |
+| Strict rhythm *(M3-E)* | Off | Rhythm mode. Off: timing is shown note by note and the right swars pass. On: every note must also be on time |
 | Sound delay *(M3-C)* | Not measured | How long the phone's sound takes to come back through its mic, measured with 6 clicks and stored per output. Measurable on the phone speaker; headphones and Bluetooth are explained, not measured. Also in Test tools |
 | Focus on swars you miss *(M2-C)* | On | Swars you miss, haven't played lately, or confuse come up more often (docs/05 §8). Off: plain random targets |
 | After a miss, show *(M2-A)* | The answer | Or a hint ("a little / too / much too" low or high, per note for phrases), or nothing |
 | Notation script | Latin (S R G) | Or Devanagari (सा रे ग) |
 | Drone | On, octave below Sa | Pa / Ma / Ni tuning per raga; volume |
 | Duck drone while listening | Off | Turn on if drone bleed hurts detection |
-| Tempo | 60 matras/min | Rhythm modes |
-| Count-in | On | |
 | Auto-advance on pass | On | |
 | Rounds per session | 20 | |
 | Max attempts per round | Unlimited | |

@@ -12,19 +12,23 @@ import 'practice_settings.dart';
 
 /// One judged note, as stored in Attempts.resultJson.
 class NoteData {
-  const NoteData(this.target, this.verdict, this.played, this.deviation);
+  const NoteData(this.target, this.verdict, this.played, this.deviation, {this.offset});
 
   factory NoteData.fromJson(Map<String, Object?> j) => NoteData(
     _pitch(j['target'] as String?),
     Verdict.values.byName(j['verdict'] as String),
     _pitch(j['played'] as String?),
     (j['deviation'] as num?)?.toDouble(),
+    offset: (j['offset'] as num?)?.toDouble(),
   );
 
   final Pitch? target;
   final Verdict verdict;
   final Pitch? played;
   final double? deviation;
+
+  /// Rhythm practice: played minus written onset, in matras.
+  final double? offset;
 
   static Pitch? _pitch(String? ascii) => ascii == null ? null : parsePhrase(ascii).pitches.single;
 }
@@ -76,6 +80,27 @@ class SessionStats {
       }
     }
     return out;
+  }
+
+  /// Rhythm practice: of the first tries' timed notes, how many were on
+  /// time, early and late (docs/05 §5). Null when nothing was timed.
+  ({int onTime, int early, int late})? get timing {
+    const tolerance = RhythmSettings();
+    var onTime = 0, early = 0, late = 0;
+    for (final r in attempted) {
+      for (final n in r.attempts.first) {
+        final o = n.offset;
+        if (o == null) continue;
+        if (o < -tolerance.tolerance) {
+          early++;
+        } else if (o > tolerance.tolerance) {
+          late++;
+        } else {
+          onTime++;
+        }
+      }
+    }
+    return onTime + early + late == 0 ? null : (onTime: onTime, early: early, late: late);
   }
 
   /// Mean deviation per target swar, over first-attempt notes that were the
@@ -138,6 +163,7 @@ class SessionSummaryView extends StatelessWidget {
     final stats = SessionStats(rounds);
     final accuracy = stats.firstTryAccuracy;
     final confusions = stats.confusions.entries.toList()..sort((a, b) => b.value - a.value);
+    final timing = stats.timing;
     final intonation = stats.intonation.entries.toList()
       ..sort((a, b) => Tuning.equal.centsOf(a.key).compareTo(Tuning.equal.centsOf(b.key)));
 
@@ -158,6 +184,16 @@ class SessionSummaryView extends StatelessWidget {
             ],
           ),
         ),
+        if (timing != null) ...[
+          const SizedBox(height: 24),
+          Text('Timing (first tries)', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Text(
+            '${(100 * timing.onTime / (timing.onTime + timing.early + timing.late)).round()}% '
+            'of notes on time · ${timing.early} early · ${timing.late} late',
+            style: theme.textTheme.bodyLarge,
+          ),
+        ],
         if (confusions.isNotEmpty) ...[
           const SizedBox(height: 24),
           Text('Swars you mixed up (first tries)', style: theme.textTheme.titleMedium),

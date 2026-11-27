@@ -3,10 +3,12 @@ library;
 
 export 'src/audio/wav.dart';
 export 'src/content/raga.dart';
+export 'src/content/rhythm_lesson.dart';
 export 'src/eval/hint.dart';
 export 'src/eval/judge.dart';
 export 'src/eval/latency.dart';
 export 'src/eval/pitch_frame.dart';
+export 'src/eval/rhythm.dart';
 export 'src/eval/segmenter.dart';
 export 'src/eval/trace.dart';
 export 'src/model/flute.dart';

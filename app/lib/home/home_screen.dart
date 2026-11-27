@@ -170,21 +170,40 @@ class _Options extends ConsumerWidget {
           onSelectionChanged: (s) => onSelect(s.first),
         );
 
+    final rhythm = settings.mode == PracticeMode.rhythm;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        label('How you answer'),
-        segments(
-          [(AnswerBy.play, 'Play it on the flute'), (AnswerBy.name, 'Name it (no mic)')],
-          settings.answerBy,
-          (v) => save(settings.copyWith(answerBy: v)),
-        ),
+        if (!rhythm) ...[
+          label('How you answer'),
+          segments(
+            [(AnswerBy.play, 'Play it on the flute'), (AnswerBy.name, 'Name it (no mic)')],
+            settings.answerBy,
+            (v) => save(settings.copyWith(answerBy: v)),
+          ),
+        ],
         label('What the app plays'),
-        segments(
-          [for (final m in PracticeMode.values) (m, m.label)],
-          settings.mode,
-          (m) => save(settings.copyWith(mode: m)),
+        // Five modes don't fit one row of segments on a phone.
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: [
+            for (final m in PracticeMode.values)
+              ChoiceChip(
+                label: Text(m.label),
+                selected: settings.mode == m,
+                onSelected: (_) => save(settings.copyWith(mode: m)),
+              ),
+          ],
         ),
+        if (rhythm && content != null) ...[
+          label('Lesson'),
+          dropdown(
+            [for (final l in content.rhythmLessons) (l.id, l.title)],
+            settings.rhythmLessonId,
+            (v) => save(settings.copyWith(rhythmLessonId: v)),
+          ),
+        ],
         if (settings.mode == PracticeMode.alankar && content != null) ...[
           label('Alankar'),
           dropdown(
@@ -211,15 +230,18 @@ class _Options extends ConsumerWidget {
           ),
         ],
         if (settings.mode != PracticeMode.single) ...[
-          label('Phrase length'),
-          dropdown(
-            [
-              ('0', 'Grows with you · now ${notes(grown)}'),
-              for (var l = 1; l <= PhraseLevel.top; l++) ('$l', notes(l)),
-            ],
-            '${settings.phraseLevel}',
-            (v) => save(settings.copyWith(phraseLevel: int.parse(v))),
-          ),
+          // A rhythm phrase's length is part of its rhythm: it isn't cut.
+          if (!rhythm) ...[
+            label('Phrase length'),
+            dropdown(
+              [
+                ('0', 'Grows with you · now ${notes(grown)}'),
+                for (var l = 1; l <= PhraseLevel.top; l++) ('$l', notes(l)),
+              ],
+              '${settings.phraseLevel}',
+              (v) => save(settings.copyWith(phraseLevel: int.parse(v))),
+            ),
+          ],
           label('Tempo of the call'),
           dropdown(
             [
@@ -236,23 +258,27 @@ class _Options extends ConsumerWidget {
               settings.countIn,
               (v) => save(settings.copyWith(countIn: v)),
             ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Metronome'),
-              subtitle: const Text('A click on every matra of the call and your turn'),
-              value: settings.metronome,
-              onChanged: (v) => save(settings.copyWith(metronome: v)),
-            ),
-            if (settings.metronome || settings.countIn) ...[
-              label('Taal'),
-              dropdown(
-                [
-                  ('none', 'No taal · a plain beat'),
-                  for (final t in PracticeSettings.taals) (t.id, '${t.label} · ${t.shape}'),
-                ],
-                settings.taalId,
-                (v) => save(settings.copyWith(taalId: v)),
+            // Rhythm practice always clicks, in its lesson's taal.
+            if (!rhythm)
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Metronome'),
+                subtitle: const Text('A click on every matra of the call and your turn'),
+                value: settings.metronome,
+                onChanged: (v) => save(settings.copyWith(metronome: v)),
               ),
+            if (settings.clicks) ...[
+              if (!rhythm) ...[
+                label('Taal'),
+                dropdown(
+                  [
+                    ('none', 'No taal · a plain beat'),
+                    for (final t in PracticeSettings.taals) (t.id, '${t.label} · ${t.shape}'),
+                  ],
+                  settings.taalId,
+                  (v) => save(settings.copyWith(taalId: v)),
+                ),
+              ],
               Row(
                 children: [
                   const Text('Click volume'),
@@ -266,6 +292,17 @@ class _Options extends ConsumerWidget {
               ),
               const SoundDelayTile(),
             ],
+            if (rhythm)
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Strict rhythm'),
+                subtitle: const Text(
+                  'Off: your timing is shown note by note, and the right swars pass. '
+                  'On: every note must also be on time',
+                ),
+                value: settings.strictRhythm,
+                onChanged: (v) => save(settings.copyWith(strictRhythm: v)),
+              ),
           ],
         ],
         if (settings.mode == PracticeMode.single || settings.mode == PracticeMode.phrase) ...[
@@ -276,8 +313,8 @@ class _Options extends ConsumerWidget {
             (v) => save(settings.copyWith(swarSet: v)),
           ),
         ],
-        if (settings.mode != PracticeMode.raga) label('Octaves'),
-        if (settings.mode != PracticeMode.raga)
+        if (settings.mode != PracticeMode.raga && !rhythm) label('Octaves'),
+        if (settings.mode != PracticeMode.raga && !rhythm)
           segments(
             [
               (SaptakRange.madhya, 'Madhya'),

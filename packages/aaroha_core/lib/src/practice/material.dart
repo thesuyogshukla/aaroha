@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import '../content/raga.dart';
+import '../content/rhythm_lesson.dart';
 import '../model/fraction.dart';
 import '../model/phrase.dart';
 import '../model/swar.dart';
@@ -237,5 +238,36 @@ class RagaDrill {
       if (a[i] != b[i]) return false;
     }
     return true;
+  }
+}
+
+/// Rhythm practice (docs/08 M3-E): the lesson's phrases in order, as
+/// written (easiest first), then at random, never the same phrase twice in
+/// a row. Phrases aren't cut to the phrase level: their length is part of
+/// the rhythm.
+class RhythmDrill {
+  RhythmDrill(this.lesson, {math.Random? random}) : _random = random ?? math.Random() {
+    if (lesson.phrases.isEmpty) throw ArgumentError('${lesson.id} has no phrases');
+  }
+
+  final RhythmLesson lesson;
+  final math.Random _random;
+  int _next = 0;
+  int? _last;
+
+  Drill next() {
+    final phrases = lesson.phrases;
+    int i;
+    if (_next < phrases.length) {
+      i = _next++;
+    } else if (phrases.length == 1) {
+      i = 0;
+    } else {
+      do {
+        i = _random.nextInt(phrases.length);
+      } while (i == _last);
+    }
+    _last = i;
+    return (label: lesson.name, phrase: phrases[i]);
   }
 }

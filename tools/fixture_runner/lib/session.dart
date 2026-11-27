@@ -150,12 +150,31 @@ bool replaySession(NativeCore core, String logPath) {
     final until = (e['lastFrame'] as int?) ?? e['t'] as int;
     final heard = session.heard(e);
     final notes = session.notes(heard);
-    final host = session.judge(e, notes, judgeSettings);
+    var host = session.judge(e, notes, judgeSettings);
+    // Rhythm practice (D53): time the host's notes on the phone's grid.
+    final grid = e['rhythm'] as Map<String, dynamic>?;
+    if (grid != null) {
+      host = host.withRhythm(
+        judgeRhythm(
+          parsePhrase(e['target'] as String),
+          host,
+          sams: [for (final s in grid['sams'] as List) s as int],
+          matraFrames: (grid['matraFrames'] as num).toDouble(),
+          delayFrames: grid['delayFrames'] as int,
+        ),
+      );
+    }
+    String timing(Object? offset) =>
+        offset == null ? '' : '@${(offset as num) >= 0 ? '+' : ''}${offset.toStringAsFixed(2)}';
     final phone = [
-      for (final n in e['result'] as List) '${n['target'] ?? '+'}:${n['verdict']}',
+      for (final n in e['result'] as List)
+        '${n['target'] ?? '+'}:${n['verdict']}${timing(n['offset'])}',
     ].join(' ');
+    var k = 0;
     final hostText = [
-      for (final n in host.notes) '${n.target?.ascii ?? '+'}:${n.verdict.name}',
+      for (final n in host.notes)
+        '${n.target?.ascii ?? '+'}:${n.verdict.name}'
+            '${timing(n.target == null ? null : host.rhythm?.notes[k++]?.offset)}',
     ].join(' ');
     final same = phone == hostText;
     if (same) agree++;
@@ -171,6 +190,14 @@ bool replaySession(NativeCore core, String logPath) {
     );
     stdout.writeln('    phone: $phone');
     if (!same) stdout.writeln('    host:  $hostText   ← differs');
+    if (host.rhythm case final r?) {
+      stdout.writeln(
+        '    timing: ${r.count(Timing.onTime)} on time, ${r.count(Timing.early)} early, '
+        '${r.count(Timing.late)} late, ${r.heldShort} held short'
+        '${r.drift == null ? '' : ', ${r.drift!.name}'}'
+        '${grid!['measuredDelay'] == true ? '' : ' (delay from the call\'s echo)'}',
+      );
+    }
     stdout.writeln(
       '    heard: ${notes.isEmpty ? 'nothing' : notes.map((n) => '${n.pitch.ascii}'
                 '(${n.deviation >= 0 ? '+' : ''}${n.deviation.toStringAsFixed(0)}c, '

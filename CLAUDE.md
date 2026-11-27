@@ -55,7 +55,7 @@ After changing anything in `packages/aaroha_audio/src/`, rebuild the host librar
 - `practice/` — practice settings, the round loop (`PracticeController`), practice screen, session summary
 - `stats/` — the *Your ear* screen (accuracy per swar, confusion grid, intonation); history loading is in `data/history.dart`
 - `debug/` — M0 test tools: live pitch readout and fixture recording
-- `widgets/` — sargam rendering, the pitch trace, and the beat strip that lights the taal's matras with the clicks
+- `widgets/` — sargam rendering, the pitch trace, the beat strip that lights the taal's matras with the clicks, and the timing strip that shows a rhythm attempt against the written matras
 
 The mic is on only during calibration, flute practice and the test tools. Listen & name runs the engine playback only (no mic).
 

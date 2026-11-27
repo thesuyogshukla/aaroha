@@ -109,11 +109,13 @@ For phrases, a row of arrows shows which way to move each note: ↑ (play higher
 
 ## 5. Judging rhythm (v0.3)
 
-- **Expected onsets** come from the phrase and the tempo, offset from the listen window's start. The player starts after a count-in, so the downbeat is known. Alternatively ("free start" setting) the first played onset anchors the phrase.
-- **Played onsets** = note onsets from step 3, minus the measured loopback latency. On the owner's rhythm takes these sit a median 8–25 ms after the rise of energy at the note's own pitch. No energy-based detector refines them: the metronome reaches the mic louder than the flute, and such a detector locks onto the clicks (decisions.md D52).
-- **Timing error** per note = played − expected onset, as a fraction of a matra. Default tolerance ±15% of a matra.
-- **Duration error** = played vs expected duration ratio; default tolerance ±25%. Releases are less precise than onsets on flute, so duration counts less than onset.
-- **Tempo drift:** fit a line through (expected, played) onsets. The slope shows rushing or dragging. Report it rather than failing on it at first.
+- **Expected onsets** come from the phrase and the tempo, measured from a sam: the sam's click as scheduled, plus the phrase's written position, plus the sound delay. Any sam of the player's turn may start the phrase: after a count-in the first is the sam counted to, and with a free start it is any sam after the call. The phrase is timed from whichever sam fits the played notes best (least total error), so starting a cycle late is fine (D53).
+- **Played onsets** = note onsets from step 3, minus the measured sound delay (D45; the call's echo estimate if it hasn't been measured). Timing is judged on the phone speaker only: with headphones the delay can't be measured yet, and Bluetooth's is too long and uneven, so practice says so instead. On the owner's rhythm takes these sit a median 8–25 ms after the rise of energy at the note's own pitch. No energy-based detector refines them: the metronome reaches the mic louder than the flute, and such a detector locks onto the clicks (decisions.md D52).
+- **Timing error** per note = played − expected onset, as a fraction of a matra. Within ±15% of a matra is on time; outside it, early or late. Every target note matched to a played note is timed, the right swar or not.
+- **Holds:** a note written for 2 matras or more is "held too short" if it stops before 75% of its written length, counted from its written start, so a late start isn't counted twice. Shorter notes aren't checked: playing them short is a matter of style, and releases are less precise than onsets on flute.
+- **Tempo drift:** a line through (written, played) onsets, with at least 4 timed notes spread over at least 3 matras. A tempo more than 5% faster than the click's is rushing, more than 5% slower is dragging.
+- **Verdict:** timing is reported, not failed (D42): per note in the verdict ("R, P early", "S held too short", "Rushing"), on a timing strip, and as a figure in the session summary. With *Strict rhythm* on, every note must also be on time and every hold held for the round to pass.
+- **Checked on the owner's playing:** on the ten rhythm fixtures, steady takes come out 75–100% on time and the three drifting takes as rushing, dragging, or early throughout (`fixture_runner rhythm`, D53).
 
 ## 6. Ornaments (v0.4)
 
@@ -197,5 +199,6 @@ The trace is kept in memory for the session; it is not stored.
 | Single-swar min note | 300 ms |
 | Pitch tolerance | ±25 cents |
 | Onset tolerance | ±15% of a matra |
-| Duration tolerance | ±25% |
+| Hold held too short | stops before 75% of a note written for 2+ matras |
+| Tempo drift | ±5%, from 4+ notes over 3+ matras |
 | End-of-attempt silence | 600 ms |

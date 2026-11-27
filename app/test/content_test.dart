@@ -22,6 +22,31 @@ void main() {
     expect(content.raga('nope'), isNull);
   });
 
+  test('rhythm lessons load, keherwa first, each file in its order', () async {
+    final content = await loadContent(rootBundle);
+    final ids = content.rhythmLessons.map((l) => l.id).toList();
+    expect(ids.first, 'keherwa-1');
+    expect(ids.indexOf('keherwa-alankars') < ids.indexOf('dadra-1'), isTrue);
+    expect(content.rhythmLesson('dadra-2')!.taal, Taal.dadra);
+    expect(content.rhythmLesson('dadra-2')!.title, 'Dadra · Two swars in a matra');
+  });
+
+  test('rhythm settings: always played and clicked, stored with the lesson', () {
+    final s = PracticeSettings.fromJson(
+      const PracticeSettings(
+        mode: PracticeMode.rhythm,
+        rhythmLessonId: 'dadra-1',
+        strictRhythm: true,
+        answerBy: AnswerBy.name,
+      ).toJson(),
+    );
+    expect([s.mode, s.rhythmLessonId, s.strictRhythm], [PracticeMode.rhythm, 'dadra-1', true]);
+    expect(s.naming, isFalse, reason: 'rhythm is played, whatever How you answer says');
+    expect(s.clicks, isTrue, reason: 'with neither the metronome nor a count-in set');
+    expect(sessionLabel(jsonEncode(s.toJson())), 'rhythm, dadra 1');
+    expect(const PracticeSettings().strictRhythm, isFalse);
+  });
+
   test('alankar and raga choices survive a save and load', () {
     const s = PracticeSettings(
       mode: PracticeMode.alankar,

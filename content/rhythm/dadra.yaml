@@ -1,0 +1,26 @@
+# Rhythm lessons in dadra (3+3), easiest first (docs/06, Rhythm).
+# Each phrase is one avartan (6 matras). Notation per docs/03.
+taal: dadra
+source: original, written for Aaroha
+license: original
+lessons:
+  - id: dadra-1
+    name: Steps and holds
+    phrases:
+      - "S R G | m - - ||"
+      - "S - R | G - m ||"
+      - "G m P | m G R ||"
+      - "S R - | G m - ||"
+      - "P - m | G - R ||"
+      - "S - - | R - - ||"
+      - "R G m | G - - ||"
+      - "m - G | R - S ||"
+  - id: dadra-2
+    name: Two swars in a matra
+    phrases:
+      - "SR G - | Gm P - ||"
+      - "S RG m | P mG R ||"
+      - "SR GR S | RG mG R ||"
+      - "S - RG | m - G ||"
+      - "G mP m | G RG S ||"
+      - "Pm G R | GR S - ||"

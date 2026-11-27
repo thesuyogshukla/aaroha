@@ -125,4 +125,34 @@ void main() {
       expect(positions(r).toSet(), {0});
     });
   });
+
+  test('the turn may start on any sam after the call, or on the one counted to', () {
+    List<int> matras(RoundClicks r) => [for (final i in r.turnSams) r.clicks[i].matra];
+    // Free start: a 4-matra call in keherwa ends mid-cycle; the next sam is
+    // 4 matras later, then every 8.
+    final free = roundClicks(
+      callMatras: 4,
+      responseMatras: 20,
+      taal: Taal.keherwa,
+      metronome: true,
+    );
+    expect(matras(free), [8, 16]);
+    // Counted in: the turn's own sam, then every cycle.
+    final counted = roundClicks(
+      callMatras: 8,
+      responseMatras: 16,
+      taal: Taal.keherwa,
+      metronome: true,
+      countIn: true,
+    );
+    expect(matras(counted), [counted.responseAt, counted.responseAt + 8]);
+    // Listening again: sams from the first response click.
+    final again = retryClicks(responseMatras: 12, taal: Taal.dadra, metronome: true);
+    expect(matras(again), [0, 6]);
+    // Count-in clicks are never a start, even on sam's position.
+    expect(
+      roundClicks(callMatras: 6, responseMatras: 0, taal: Taal.dadra, countIn: true).turnSams,
+      isEmpty,
+    );
+  });
 }

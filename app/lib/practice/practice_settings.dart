@@ -6,7 +6,8 @@ enum PracticeMode {
   single('Single swar'),
   phrase('Short phrase'),
   alankar('Alankar'),
-  raga('Raga');
+  raga('Raga'),
+  rhythm('Rhythm');
 
   const PracticeMode(this.label);
   final String label;
@@ -103,12 +104,15 @@ class PracticeSettings {
     this.countIn = false,
     this.taalId = 'none',
     this.clickVolume = 0.6,
+    this.rhythmLessonId = 'keherwa-1',
+    this.strictRhythm = false,
   });
 
   final PracticeMode mode;
   final AnswerBy answerBy;
 
-  bool get naming => answerBy == AnswerBy.name;
+  /// Rhythm practice is always played.
+  bool get naming => answerBy == AnswerBy.name && mode != PracticeMode.rhythm;
   final SwarSet swarSet;
   final SaptakRange range;
   final ShowTarget showTarget;
@@ -180,6 +184,13 @@ class PracticeSettings {
   final String taalId;
   final double clickVolume;
 
+  /// Rhythm mode: which lesson (docs/08 M3-E).
+  final String rhythmLessonId;
+
+  /// Rhythm mode: off, timing is reported and doesn't fail the round
+  /// (decisions.md D42); on, every note must be on time too.
+  final bool strictRhythm;
+
   Taal? get taal => taalId == 'none' ? null : Taal.byId(taalId);
 
   /// The taals offered on Home (docs/08 M3).
@@ -187,7 +198,9 @@ class PracticeSettings {
 
   /// Whether this session clicks at all: played phrases, with the metronome
   /// or a count-in on. A single swar and naming never click.
-  bool get clicks => !naming && mode != PracticeMode.single && (metronome || countIn);
+  bool get clicks =>
+      mode == PracticeMode.rhythm ||
+      (!naming && mode != PracticeMode.single && (metronome || countIn));
 
   /// The raga whose drone and scale this session uses, if any.
   String? get ragaInUse => switch (mode) {
@@ -235,6 +248,8 @@ class PracticeSettings {
     bool? countIn,
     String? taalId,
     double? clickVolume,
+    String? rhythmLessonId,
+    bool? strictRhythm,
   }) => PracticeSettings(
     mode: mode ?? this.mode,
     answerBy: answerBy ?? this.answerBy,
@@ -266,6 +281,8 @@ class PracticeSettings {
     countIn: countIn ?? this.countIn,
     taalId: taalId ?? this.taalId,
     clickVolume: clickVolume ?? this.clickVolume,
+    rhythmLessonId: rhythmLessonId ?? this.rhythmLessonId,
+    strictRhythm: strictRhythm ?? this.strictRhythm,
   );
 
   Map<String, dynamic> toJson() => {
@@ -299,6 +316,8 @@ class PracticeSettings {
     'countIn': countIn,
     'taal': taalId,
     'clickVolume': clickVolume,
+    'rhythmLesson': rhythmLessonId,
+    'strictRhythm': strictRhythm,
   };
 
   factory PracticeSettings.fromJson(Map<String, dynamic> j) {
@@ -343,6 +362,8 @@ class PracticeSettings {
       countIn: j['countIn'] as bool? ?? d.countIn,
       taalId: Taal.byId('${j['taal']}') != null ? '${j['taal']}' : d.taalId,
       clickVolume: ((j['clickVolume'] as num?)?.toDouble() ?? d.clickVolume).clamp(0.0, 1.0),
+      rhythmLessonId: j['rhythmLesson'] as String? ?? d.rhythmLessonId,
+      strictRhythm: j['strictRhythm'] as bool? ?? d.strictRhythm,
     );
   }
 }
@@ -371,6 +392,7 @@ String sessionLabel(String settingsJson) {
     PracticeMode.phrase => 'phrases',
     PracticeMode.alankar => s.ragaInUse == null ? 'alankar' : 'alankar in ${title(s.ragaInUse!)}',
     PracticeMode.raga => 'raga ${title(s.ragaId)}',
+    PracticeMode.rhythm => 'rhythm, ${s.rhythmLessonId.replaceAll('-', ' ')}',
   };
   return s.naming ? '$what · named' : what;
 }

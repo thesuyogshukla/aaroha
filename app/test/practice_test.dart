@@ -169,4 +169,41 @@ void main() {
     expect(stats.intonation[p('m')], 40);
     expect(rounds[1].passedOnAttempt, 2);
   });
+
+  test('rhythm: each target keeps its timing in the stored result, and the summary counts it', () {
+    DetectedNote at(String swar, int onset) => DetectedNote(
+      pitch: p(swar),
+      onset: onset,
+      end: onset + 40000,
+      cents: Tuning.just.centsOf(p(swar)),
+      deviation: 0,
+      stability: 2,
+    );
+    const matra = 48000;
+    final phrase = parsePhrase('S R G m');
+    // R comes a quarter of a matra early; an extra P sneaks in after G.
+    final result = judgePhrase(phrase.pitches, [
+      at('S', 0),
+      at('R', 36000),
+      at('G', 96000),
+      at('P', 120000),
+      at('m', 144000),
+    ], const JudgeSettings(tuning: Tuning.just));
+    final timed = result.withRhythm(
+      judgeRhythm(phrase, result, sams: const [0], matraFrames: matra.toDouble()),
+    );
+    final json = attemptToJson(timed);
+    expect([for (final n in json) n['offset']], [0.0, -0.25, 0.0, null, 0.0]);
+    final stats = SessionStats([
+      RoundData(
+        phrase,
+        [
+          [for (final n in json) NoteData.fromJson(n)],
+        ],
+        [timed.passed],
+      ),
+    ]);
+    expect(stats.timing, (onTime: 3, early: 1, late: 0));
+    expect(SessionStats([RoundData(phrase, const [], const [])]).timing, isNull);
+  });
 }

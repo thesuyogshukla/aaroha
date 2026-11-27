@@ -50,6 +50,15 @@ class RoundClicks {
 
   /// Matras of each count-in; 0 for a free start.
   final int countInMatras;
+
+  /// Indexes into [clicks] of the sams the player's turn may start on
+  /// (docs/05 §5): every sam clicked from [responseAt] on, count-ins left
+  /// out. Counted in, the first is the sam counted to; free, any sam after
+  /// the call. Rhythm practice times the phrase from whichever fits.
+  List<int> get turnSams => [
+    for (var i = 0; i < clicks.length; i++)
+      if (clicks[i].position == 0 && !clicks[i].countIn && clicks[i].matra >= responseAt) i,
+  ];
 }
 
 /// How many matras a count-in lasts: the taal's last vibhag, leading into

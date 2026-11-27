@@ -422,9 +422,35 @@ bool rhythmTakes(NativeCore core, String dir) {
     stdout.writeln(
       '    each against the click: ${report.errorsMs.map((e) => e.round()).join(' ')} ms',
     );
+    stdout.writeln(
+      '    as Rhythm practice would judge it: ${_rhythmVerdict(notes, yaml, wav.sampleRate)}',
+    );
   }
   if (found == 0) stdout.writeln('No rhythm takes in $dir yet (docs/07, Rhythm takes).');
   return true;
+}
+
+/// What Rhythm practice (docs/08 M3-E) would say about a take: the pitch
+/// judged as in practice, then the timing from the take's sams (D53).
+String _rhythmVerdict(List<DetectedNote> notes, YamlMap yaml, int sampleRate) {
+  final phrase = parsePhrase('${yaml['rhythm']}');
+  final matra = 60 / (yaml['tempo'] as num) * sampleRate;
+  final cycle = (Taal.byId('${yaml['taal']}')?.matras ?? 4) * matra;
+  final sam = yaml['sam_frame'] as int;
+  final pitch = judgePhrase(phrase.pitches, notes, const JudgeSettings(toleranceCents: 60));
+  final r = judgeRhythm(
+    phrase,
+    pitch,
+    sams: [for (var k = 0; k < 3; k++) sam + (k * cycle).round()],
+    matraFrames: matra,
+    delayFrames: (((yaml['sound_delay_ms'] as num?) ?? 0) * sampleRate / 1000).round(),
+  );
+  if (r == null) return 'nothing to time';
+  final held = r.notes.where((n) => n?.held != null).length;
+  final offsets = [for (final n in r.notes) n == null ? '-' : n.offset.toStringAsFixed(2)];
+  return '${r.count(Timing.onTime)} on time, ${r.count(Timing.early)} early, '
+      '${r.count(Timing.late)} late; ${r.heldShort} of $held holds short; '
+      '${r.drift?.name ?? 'drift unknown'} · offsets ${offsets.join(' ')}';
 }
 
 /// Measures again, on the host, sound delay takes the app kept (docs/08

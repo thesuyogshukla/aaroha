@@ -6,6 +6,7 @@ import '../widgets/pitch_trace.dart';
 import '../widgets/beat_strip.dart';
 import '../widgets/sargam.dart';
 import '../widgets/swar_keypad.dart';
+import '../widgets/timing_strip.dart';
 import 'practice_controller.dart';
 import 'practice_settings.dart';
 import 'session_summary.dart';
@@ -112,6 +113,18 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                       ),
                     ),
                   if (round != null) _target(context, s),
+                  if (round != null &&
+                      s.phase == PracticePhase.verdict &&
+                      s.lastResult?.rhythm != null) ...[
+                    const SizedBox(height: 12),
+                    TimingStrip(
+                      phrase: round.phrase,
+                      result: s.lastResult!,
+                      taal: s.settings.taal,
+                      script: s.settings.script,
+                      showNames: _targetVisible(s),
+                    ),
+                  ],
                   if (round != null && s.settings.naming && _targetVisible(s)) ...[
                     const SizedBox(height: 12),
                     _answerSlots(context, s, size: 28),
@@ -407,6 +420,14 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     } else {
       lines.add(line('Not quite'));
     }
+    // Timing gives no swar away, so it is shown whatever a miss reveals.
+    if (result.rhythm case final rhythm?) {
+      for (final t in _timingLines(rhythm, round.phrase, script, hideNames: hideNames)) {
+        lines.add(line(t, theme.textTheme.bodyLarge));
+      }
+    } else if (s.timingNote != null && s.settings.mode == PracticeMode.rhythm) {
+      lines.add(line(s.timingNote!, theme.textTheme.bodySmall));
+    }
 
     final countdown = s.countdown;
     return Column(
@@ -417,7 +438,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           size: 56,
           color: !result.passed
               ? theme.colorScheme.error
-              : result.inTune && !result.cracked
+              : result.inTune && !result.cracked && (result.rhythm?.inTime ?? true)
               ? theme.colorScheme.primary
               : theme.colorScheme.tertiary,
         ),
@@ -430,6 +451,43 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         ],
       ],
     );
+  }
+
+  /// Rhythm practice (docs/08 M3-E): which notes came early or late, which
+  /// holds stopped short, and whether the tempo ran away, in the style of
+  /// the M2 hints.
+  static List<String> _timingLines(
+    RhythmResult r,
+    Phrase phrase,
+    Script script, {
+    required bool hideNames,
+  }) {
+    final written = phrase.sounding;
+    List<String> names(bool Function(NoteTiming t) test) => [
+      for (var i = 0; i < r.notes.length; i++)
+        if (r.notes[i] case final t? when test(t)) swarText(written[i].pitch!.swar, script),
+    ];
+    String which(List<String> notes, String what) => hideNames
+        ? '${notes.length} ${notes.length == 1 ? 'note' : 'notes'} $what'
+        : '${notes.join(', ')} $what';
+    final early = names((t) => t.timing == Timing.early);
+    final late = names((t) => t.timing == Timing.late);
+    final short = names((t) => t.heldShort);
+    final out = <String>[
+      if (early.isEmpty && late.isEmpty && short.isEmpty) 'In time',
+      if (early.isNotEmpty) which(early, 'early'),
+      if (late.isNotEmpty) which(late, 'late'),
+      if (short.isNotEmpty) which(short, 'held too short'),
+    ];
+    switch (r.drift) {
+      case Drift.rushing:
+        out.add('Rushing: you got ahead of the click');
+      case Drift.dragging:
+        out.add('Dragging: you fell behind the click');
+      case Drift.steady || null:
+        break;
+    }
+    return out;
   }
 
   static String _describe(JudgedNote n, Script script, {required bool hideTarget}) {
@@ -515,8 +573,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       RoundData(
         r.phrase,
         [
-          for (final a in r.attempts)
-            [for (final n in a.notes) NoteData(n.target, n.verdict, n.played?.pitch, n.deviation)],
+          for (final a in r.attempts) [for (final n in attemptToJson(a)) NoteData.fromJson(n)],
         ],
         [for (final a in r.attempts) a.passed],
       ),

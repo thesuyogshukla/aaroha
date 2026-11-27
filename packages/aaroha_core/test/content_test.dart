@@ -56,6 +56,66 @@ void main() {
       expect(alankars.first.pattern, [0]);
       expect(alankars.map((a) => a.id).toSet().length, alankars.length);
     });
+
+    test('rhythm lessons parse, fit a medium flute, and have unique ids', () {
+      final lessons = [
+        for (final f in Directory(
+          '${contentDir.path}/rhythm',
+        ).listSync()..sort((a, b) => a.path.compareTo(b.path)))
+          if (f.path.endsWith('.yaml'))
+            ...RhythmLesson.listFromYaml(File(f.path).readAsStringSync()),
+      ];
+      expect({for (final l in lessons) l.taal}, {Taal.keherwa, Taal.dadra});
+      expect(lessons.map((l) => l.id).toSet().length, lessons.length);
+      final low = Tuning.equal.centsOf(const Pitch(Swar.pa, -1));
+      final high = Tuning.equal.centsOf(const Pitch(Swar.pa, 1));
+      for (final l in lessons) {
+        expect(l.license, 'original', reason: l.id);
+        expect(l.phrases, isNotEmpty, reason: l.id);
+        for (final p in l.phrases) {
+          for (final pitch in p.pitches) {
+            final c = Tuning.equal.centsOf(pitch);
+            expect(c >= low && c <= high, isTrue, reason: '${l.id}: $pitch');
+          }
+          // Printed and parsed back the same, as rounds are stored.
+          expect(parsePhrase(printNotation(p)), p, reason: '${l.id}: ${printNotation(p)}');
+        }
+      }
+    });
+  });
+
+  group('RhythmLesson', () {
+    test('a phrase must end on a vibhag and match the taal', () {
+      String file(String phrase) =>
+          'taal: keherwa\nsource: s\nlicense: l\nlessons:\n  - id: x\n    name: X\n'
+          '    phrases: ["$phrase"]\n';
+      expect(RhythmLesson.listFromYaml(file('S R G m')).single.phrases.single.length, Fraction(4));
+      expect(() => RhythmLesson.listFromYaml(file('S R G')), throwsFormatException);
+      expect(() => RhythmLesson.listFromYaml(file('S R | G m ||')), throwsFormatException);
+      expect(() => RhythmLesson.listFromYaml(file('S - - -')), throwsFormatException);
+    });
+
+    test('RhythmDrill plays the lesson in order, then at random without repeats', () {
+      final lesson = RhythmLesson(
+        id: 'x',
+        name: 'X',
+        taal: Taal.keherwa,
+        source: '',
+        license: '',
+        phrases: [
+          for (final t in ['S R G m', 'S - R -', 'G - R S']) parsePhrase(t),
+        ],
+      );
+      final drill = RhythmDrill(lesson, random: math.Random(1));
+      final first = [for (var i = 0; i < 3; i++) printNotation(drill.next().phrase)];
+      expect(first, ['S R G m', 'S - R -', 'G - R S']);
+      var last = first.last;
+      for (var i = 0; i < 50; i++) {
+        final d = printNotation(drill.next().phrase);
+        expect(d, isNot(last));
+        last = d;
+      }
+    });
   });
 
   group('Raga', () {

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import '../model/swar.dart';
 import '../model/tuning.dart';
+import 'rhythm.dart';
 import 'segmenter.dart';
 
 /// Section 4 of docs/05-evaluation.md.
@@ -78,7 +79,12 @@ class JudgedNote {
 }
 
 class AttemptResult {
-  const AttemptResult(this.notes, {this.strictIntonation = false});
+  const AttemptResult(
+    this.notes, {
+    this.strictIntonation = false,
+    this.rhythm,
+    this.strictRhythm = false,
+  });
 
   /// One entry per target in order, with extra played notes in between.
   final List<JudgedNote> notes;
@@ -86,10 +92,27 @@ class AttemptResult {
   /// See [JudgeSettings.strictIntonation].
   final bool strictIntonation;
 
+  /// The attempt's timing, in rhythm practice (docs/05 §5); null otherwise.
+  final RhythmResult? rhythm;
+
+  /// When true, the timing must be right too ([RhythmResult.inTime]). Off by
+  /// default: timing is reported, not failed (D42).
+  final bool strictRhythm;
+
   /// Every target matched with the right swar (and in tune, if strict), no
-  /// extra notes.
+  /// extra notes, and in time if [strictRhythm].
   bool get passed =>
-      notes.isNotEmpty && notes.every((n) => strictIntonation ? n.passed : n.rightSwar);
+      notes.isNotEmpty &&
+      notes.every((n) => strictIntonation ? n.passed : n.rightSwar) &&
+      (!strictRhythm || (rhythm?.inTime ?? true));
+
+  /// This result with its timing judged.
+  AttemptResult withRhythm(RhythmResult? rhythm, {bool strict = false}) => AttemptResult(
+    notes,
+    strictIntonation: strictIntonation,
+    rhythm: rhythm,
+    strictRhythm: strict,
+  );
 
   /// Every note also within tolerance.
   bool get inTune => notes.isNotEmpty && notes.every((n) => n.passed);

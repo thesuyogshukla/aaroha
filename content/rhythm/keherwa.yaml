@@ -1,0 +1,72 @@
+# Rhythm lessons in keherwa (4+4), easiest first (docs/06, Rhythm).
+# Each phrase is one vibhag (4 matras) or one avartan (8). Notation per docs/03:
+# `-` holds the note before, `_` is a rest, two swars in a matra share it.
+# Mostly steps between madhya Sa and Pa, so the attention goes on the timing.
+taal: keherwa
+source: original, written for Aaroha
+license: original
+lessons:
+  - id: keherwa-1
+    name: Steps and holds
+    phrases:
+      - "S R G m"
+      - "S - R -"
+      - "S R G -"
+      - "G - R S"
+      - "S - - R"
+      - "m - G -"
+      - "R G m -"
+      - "P - m G"
+  - id: keherwa-2
+    name: Holds across the avartan
+    phrases:
+      - "S - R G | m - - - ||"
+      - "S R G - | m G R - ||"
+      - "P - m - | G - R - ||"
+      - "S - - R | G - - m ||"
+      - "G - m P | m - G - ||"
+      - "S R G m | P - - - ||"
+      - "P m G - | R - S - ||"
+      - "R - G - | m P m - ||"
+  - id: keherwa-3
+    name: Two swars in a matra
+    phrases:
+      - "SR G m -"
+      - "S RG m -"
+      - "SR GR S -"
+      - "G mP m -"
+      - "S - RG m | P - mG R ||"
+      - "SR GR S - | RG mG R - ||"
+      - "G - mP m | G - RG S ||"
+      - "SR G Gm P | mG R GR S ||"
+  - id: keherwa-4
+    name: Rests
+    phrases:
+      - "S _ R _"
+      - "S R _ G"
+      - "S - _ R"
+      - "G _ m P"
+      - "S - _ R | G - _ m ||"
+      - "S R G _ | m G R _ ||"
+      - "P _ m _ | G R S _ ||"
+      - "S _ RG _ | mP _ m - ||"
+  - id: keherwa-5
+    name: Repeated swars
+    phrases:
+      - "S S R R"
+      - "G G R -"
+      - "S S R - | G G m - ||"
+      - "m m G G | R R S - ||"
+      - "SS R - -"
+      - "S RR G -"
+      - "SS RR G - | GG mm P - ||"
+      - "PP mm G - | RR SS S - ||"
+  - id: keherwa-alankars
+    name: Alankars in rhythm
+    phrases:
+      - "S - R G | m - P D ||"
+      - "N - D P | m - G R ||"
+      - "S RG m PD | N S' - - ||"
+      - "S' ND P mG | R S - - ||"
+      - "SR G RG m | Gm P mP D ||"
+      - "DP m Pm G | mG R GR S ||"

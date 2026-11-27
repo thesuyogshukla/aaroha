@@ -8,6 +8,7 @@ import 'package:aaroha_audio/aaroha_audio.dart';
 import 'package:aaroha_core/aaroha_core.dart';
 
 import '../audio/audio_service.dart';
+import '../audio/sound_delay.dart';
 import '../data/content.dart';
 import '../data/database.dart';
 import '../data/history.dart';
@@ -81,6 +82,7 @@ class PracticeState {
     this.keypad = const [],
     this.title,
     this.phraseLevel,
+    this.timingNote,
   });
 
   final PracticePhase phase;
@@ -104,8 +106,13 @@ class PracticeState {
   /// What is being practised, in alankar and raga modes ("Yaman").
   final String? title;
 
-  /// The phrase level in use (docs/05 §9); null in single-swar practice.
+  /// The phrase level in use (docs/05 §9); null in single-swar and rhythm
+  /// practice.
   final int? phraseLevel;
+
+  /// Rhythm practice: why timing isn't judged this session (headphones,
+  /// Bluetooth), or null when it is.
+  final String? timingNote;
 
   RoundRecord? get round => rounds.isEmpty ? null : rounds.last;
   AttemptResult? get lastResult => round?.attempts.lastOrNull;
@@ -130,11 +137,18 @@ class PracticeState {
     keypad: keypad,
     title: title,
     phraseLevel: phraseLevel,
+    timingNote: timingNote,
   );
 }
 
 /// Where a session's targets come from, and what goes with them.
-typedef PracticeMaterial = ({Raga? raga, int? rounds, List<Pitch> keypad, String? title});
+typedef PracticeMaterial = ({
+  Raga? raga,
+  int? rounds,
+  List<Pitch> keypad,
+  String? title,
+  Taal? taal,
+});
 
 int _byPitch(Pitch a, Pitch b) =>
     (a.octave * 12 + a.swar.semitone).compareTo(b.octave * 12 + b.swar.semitone);
@@ -178,6 +192,13 @@ class PracticeController extends Notifier<PracticeState?> {
   int get _deadline => _window?.deadline ?? 0;
   final _heard = <PitchFrame>[];
 
+  /// Rhythm practice: the sams the player may start on in this turn (engine
+  /// frames, as scheduled), and the sound delay to time notes with (D45):
+  /// null when timing isn't judged.
+  var _sams = <int>[];
+  double? _timingDelayMs;
+  bool _timing = false;
+
   /// The clicks of the current call or retry, for the beat strip.
   BeatPlan _beats = BeatPlan.none;
   BeatPlan get beats => _beats;
@@ -209,7 +230,8 @@ class PracticeController extends Notifier<PracticeState?> {
     _history = settings.adaptive ? await loadPracticeHistory(_db) : null;
     _levelTracker = null;
     _ragaDrill = null;
-    if (settings.mode != PracticeMode.single) {
+    final rhythm = settings.mode == PracticeMode.rhythm;
+    if (settings.mode != PracticeMode.single && !rhythm) {
       if (settings.phraseLevelGrows) {
         _levelTracker = await loadPhraseLevel(_db, naming: settings.naming);
         _level = _levelTracker!.level;
@@ -227,6 +249,24 @@ class PracticeController extends Notifier<PracticeState?> {
     final raga = m.raga;
     // An alankar is one walk up and down: it sets its own number of rounds.
     if (m.rounds != null) settings = settings.copyWith(rounds: m.rounds);
+    // Rhythm practice clicks every matra, in its lesson's taal.
+    if (m.taal != null) settings = settings.copyWith(metronome: true, taalId: m.taal!.id);
+    String? timingNote;
+    _timing = rhythm;
+    _timingDelayMs = null;
+    if (rhythm) {
+      // Timing needs the sound's round trip: measured on the speaker only.
+      final route = await currentOutputRoute();
+      if (route.measurable) {
+        final raw = await _db.setting(SoundDelay.key(route));
+        _timingDelayMs = SoundDelay.fromJson(route, raw)?.ms;
+      } else {
+        _timing = false;
+        timingNote = route == OutputRoute.bluetooth
+            ? 'Timing isn\'t judged on Bluetooth: its delay is too long and uneven.'
+            : 'Timing isn\'t judged with headphones yet: play through the phone speaker for it.';
+      }
+    }
     state = PracticeState(
       phase: PracticePhase.starting,
       flute: flute,
@@ -234,7 +274,8 @@ class PracticeController extends Notifier<PracticeState?> {
       rounds: [],
       keypad: m.keypad,
       title: m.title,
-      phraseLevel: settings.mode == PracticeMode.single ? null : _level,
+      phraseLevel: settings.mode == PracticeMode.single || rhythm ? null : _level,
+      timingNote: timingNote,
     );
     _audio.configureFor(flute.saHz);
     _audio.setDrone(
@@ -310,7 +351,7 @@ class PracticeController extends Notifier<PracticeState?> {
                   ),
           ),
         );
-        return (raga: null, rounds: null, keypad: pitches, title: null);
+        return (raga: null, rounds: null, keypad: pitches, title: null, taal: null);
       case PracticeMode.alankar:
         final content = await ref.read(contentProvider.future);
         final alankar = content.alankar(settings.alankarId) ?? content.alankars.first;
@@ -330,6 +371,7 @@ class PracticeController extends Notifier<PracticeState?> {
           rounds: rounds.length,
           keypad: {...up, ...down}.toList()..sort(_byPitch),
           title: '${alankar.name} · ${raga?.name ?? (set ?? SwarSet.shuddha).label}',
+          taal: null,
         );
       case PracticeMode.raga:
         final content = await ref.read(contentProvider.future);
@@ -353,6 +395,20 @@ class PracticeController extends Notifier<PracticeState?> {
             tuning: tuning,
           ),
           title: raga.name,
+          taal: null,
+        );
+      case PracticeMode.rhythm:
+        final content = await ref.read(contentProvider.future);
+        final lesson =
+            content.rhythmLesson(settings.rhythmLessonId) ?? content.rhythmLessons.firstOrNull;
+        if (lesson == null) throw StateError('No rhythm lessons are installed.');
+        _nextDrill = RhythmDrill(lesson).next;
+        return (
+          raga: null,
+          rounds: null,
+          keypad: {for (final p in lesson.phrases) ...p.pitches}.toList()..sort(_byPitch),
+          title: lesson.title,
+          taal: lesson.taal,
         );
     }
   }
@@ -637,6 +693,8 @@ class PracticeController extends Notifier<PracticeState?> {
       volume: s.clickVolume,
     );
     _audio.playClicks(clicks);
+    // Any sam of the player's turn can start the phrase (docs/05 §5).
+    _sams = [for (final i in p.turnSams) clicks[i].time];
     _beats = BeatPlan([
       for (var i = 0; i < clicks.length; i++)
         (time: clicks[i].time, position: p.clicks[i].position),
@@ -741,9 +799,24 @@ class PracticeController extends Notifier<PracticeState?> {
       config: _segmenterConfig(s, sr),
     );
     final judge = s.settings.judge(sr);
-    final result = round.target.length == 1
+    var result = round.target.length == 1
         ? judgeSingle(round.target.single, notes, judge)
         : judgePhrase(round.target, notes, judge);
+    final matraFrames = 60 / s.settings.tempo * sr;
+    // The stored measurement, else the call's echo (they agree, D45).
+    final delayFrames = ((_timingDelayMs ?? _audio.loopbackMs) * sr / 1000).round();
+    if (_timing) {
+      result = result.withRhythm(
+        judgeRhythm(
+          round.phrase,
+          result,
+          sams: _sams,
+          matraFrames: matraFrames,
+          delayFrames: delayFrames,
+        ),
+        strict: s.settings.strictRhythm,
+      );
+    }
     round.traces.add(
       buildPitchTrace(
         _heard,
@@ -767,6 +840,16 @@ class PracticeController extends Notifier<PracticeState?> {
       'started': ?_window?.started,
       'passed': result.passed,
       'result': attemptToJson(result),
+      if (_timing)
+        'rhythm': {
+          'sams': _sams,
+          'matraFrames': matraFrames,
+          'delayFrames': delayFrames,
+          'measuredDelay': _timingDelayMs != null,
+          'sam': ?result.rhythm?.sam,
+          'drift': ?result.rhythm?.drift?.name,
+          'tempoRatio': ?result.rhythm?.tempoRatio,
+        },
       'detected': [
         for (final n in notes)
           {
@@ -930,14 +1013,23 @@ class PracticeController extends Notifier<PracticeState?> {
 }
 
 /// Stored per attempt (Attempts.resultJson).
-List<Map<String, Object?>> attemptToJson(AttemptResult r) => [
-  for (final n in r.notes)
-    {
-      'target': n.target?.ascii,
-      'verdict': n.verdict.name,
-      'played': n.played?.pitch.ascii,
-      'deviation': n.deviation == null ? null : double.parse(n.deviation!.toStringAsFixed(1)),
-      // The swar a cracked attack touched first (D48); absent when clean.
-      'crack': ?n.played?.crack?.ascii,
-    },
-];
+List<Map<String, Object?>> attemptToJson(AttemptResult r) {
+  var k = 0;
+  return [
+    for (final n in r.notes)
+      () {
+        // Rhythm practice: each target's timing, in matras from its place.
+        final timing = n.target == null ? null : r.rhythm?.notes[k++];
+        return {
+          'target': n.target?.ascii,
+          'verdict': n.verdict.name,
+          'played': n.played?.pitch.ascii,
+          'deviation': n.deviation == null ? null : double.parse(n.deviation!.toStringAsFixed(1)),
+          // The swar a cracked attack touched first (D48); absent when clean.
+          'crack': ?n.played?.crack?.ascii,
+          if (timing != null) 'offset': double.parse(timing.offset.toStringAsFixed(2)),
+          if (timing?.held != null) 'held': double.parse(timing!.held!.toStringAsFixed(2)),
+        };
+      }(),
+  ];
+}
