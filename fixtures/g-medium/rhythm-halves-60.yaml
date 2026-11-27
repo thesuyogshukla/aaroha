@@ -1,0 +1,23 @@
+take: rhythm-halves
+flute: 'G medium'
+recorded: 2026-11-27T19:56:57.395342
+seconds: 23.2
+sa_hz: 392.19
+sa_calibrated: true
+drone: false
+drone_volume: 0.50
+drone_first_string: pa
+drone_filter: true
+input_preset: unprocessed
+backend: AAudio
+phone: 'moto g45 5G'
+source_file: 'rhythm-halves-5.wav (Test tools, 2026-11-27)'
+device: 'V1UGS35H.75-14-9-3-1-6'
+played: 'S R G R S R G m G R G m P m G R G R S S'
+rhythm: 'SR GR S - | RG mG R - || Gm Pm G - | RG RS S - ||'
+taal: keherwa
+tempo: 60
+sam_frame: 228480
+click_frames: [36480, 84480, 132480, 180480, 228480, 276480, 324480, 372480, 420480, 468480, 516480, 564480, 612480, 660480, 708480, 756480, 804480, 852480, 900480, 948480, 996480, 1044480]
+sound_delay_ms: 422.7
+notes: "Played with the flute, steady. The Ma after Pa slides about 50 c sharp and splits into m and M."

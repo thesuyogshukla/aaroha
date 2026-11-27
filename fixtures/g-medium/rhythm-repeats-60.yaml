@@ -1,0 +1,24 @@
+take: rhythm-repeats
+flute: 'G medium'
+recorded: 2026-11-27T19:57:54.918027
+seconds: 23.2
+sa_hz: 392.19
+sa_calibrated: true
+drone: false
+drone_volume: 0.50
+drone_first_string: pa
+drone_filter: true
+input_preset: unprocessed
+backend: AAudio
+phone: 'moto g45 5G'
+source_file: 'rhythm-repeats-3.wav (Test tools, 2026-11-27)'
+device: 'V1UGS35H.75-14-9-3-1-6'
+played: 'S S S S R R R R G G G G S'
+count_repeats: true
+rhythm: 'S S S S | R R R R || G G G G | S - - - ||'
+taal: keherwa
+tempo: 60
+sam_frame: 225600
+click_frames: [33600, 81600, 129600, 177600, 225600, 273600, 321600, 369600, 417600, 465600, 513600, 561600, 609600, 657600, 705600, 753600, 801600, 849600, 897600, 945600, 993600, 1041600]
+sound_delay_ms: 422.7
+notes: "Played with the flute, each swar tongued, steady."

@@ -1,0 +1,23 @@
+take: rhythm-holds
+flute: 'G medium'
+recorded: 2026-11-27T20:02:00.395579
+seconds: 16.2
+sa_hz: 392.19
+sa_calibrated: true
+drone: false
+drone_volume: 0.50
+drone_first_string: pa
+drone_filter: true
+input_preset: unprocessed
+backend: AAudio
+phone: 'moto g45 5G'
+source_file: 'rhythm-holds-5.wav (Test tools, 2026-11-27)'
+device: 'V1UGS35H.75-14-9-3-1-6'
+played: 'S R G m P m G R S'
+rhythm: 'S - R G | m - - - || P - m G | R - S - ||'
+taal: keherwa
+tempo: 90
+sam_frame: 161600
+click_frames: [33600, 65600, 97600, 129600, 161600, 193600, 225600, 257600, 289600, 321600, 353600, 385600, 417600, 449600, 481600, 513600, 545600, 577600, 609600, 641600, 673600, 705600]
+sound_delay_ms: 422.7
+notes: "Played with the flute. The player gets steadily earlier, about 0.7 s ahead by the last note (rushing about 7%)."

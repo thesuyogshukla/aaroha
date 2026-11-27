@@ -91,10 +91,11 @@ The app fills `played:` with the notes the take asks for. If you played somethin
 | `repeats`: number of notes | exact |
 | `phrases`: phrase judged as pass | all |
 | `with-drone`: same results as without drone | all |
+| `rhythm-*`: written notes found, onsets against the pitch rise | median ≤ 30 ms, 90% ≤ 100 ms |
 
 The runner prints a table per fixture and exits non-zero on failure.
 
-`selftest` also checks the metronome (D44): clicks alone at 110 a minute must give no notes on any flute, and clicks over the synthetic notes, from 12 dB below the flute's peak to 6 dB above it, must leave every note and its cents unchanged. `clickcheck [dir]` runs `check` again with clicks mixed into the labelled recordings at −6, 0 and +6 dB. Known result: 36 of 39. The one difference is the D# `scale-slow` take's overblown madhya Pa, whose tracker confidence already hovers at the threshold; a click there stretches the weak patch past the 150 ms bridge and the note splits (D44).
+`selftest` also checks the metronome (D44): clicks alone at 110 a minute must give no notes on any flute, and clicks over the synthetic notes, from 12 dB below the flute's peak to 6 dB above it, must leave every note and its cents unchanged. `clickcheck [dir]` runs `check` again with clicks mixed into the labelled recordings at −6, 0 and +6 dB. Known result: 36 of 39 (rhythm takes skipped). The one difference is the D# `scale-slow` take's overblown madhya Pa, whose tracker confidence already hovers at the threshold; a click there stretches the weak patch past the 150 ms bridge and the note splits (D44).
 
 ## Storage
 
@@ -134,7 +135,9 @@ How to record one:
 - *Record with count-in*: four clicks count you in; start on the next click (sam) and play the phrase yourself on the flute, with the click. Only the clicks play while recording: Record stops a *Hear it* still playing, so the app's flute voice can't end up in the take. (The first ten takes, 2026-11-25, held only *Hear it* playback and were set aside.) The metronome runs two matras past the end and recording stops by itself.
 - Phone on a stand about 30 cm away, speaker towards you, as for practice. A mistake is fine: say so in the label's `notes`, or record again (a second take is saved as `-2`).
 
-The label adds `rhythm` (the notation), `taal`, `tempo`, `sam_frame` and `click_frames` (sample positions in this WAV where sam and each click were played) and `sound_delay_ms` (the stored speaker delay), plus `count_repeats` for the repeat takes. `dart run bin/fixture_runner.dart rhythm [dir]` reports, for each take, how many notes were found and how far each onset is from where it should be: sam plus its written position at the tempo, plus the sound delay. The self-test prints the same report for synthetic takes as a baseline (a few ms at both tempos).
+The label adds `rhythm` (the notation), `taal`, `tempo`, `sam_frame` and `click_frames` (sample positions in this WAV where sam and each click were played) and `sound_delay_ms` (the stored speaker delay), plus `count_repeats` for the repeat takes. `dart run bin/fixture_runner.dart rhythm [dir]` reports, for each take, how many notes were found and how far each onset is from where it should be: sam plus its written position at the tempo, plus the sound delay. The self-test prints the same report for synthetic takes as a baseline (a few ms at both tempos). The report also fits a line through the take's onsets, which shows the player's tempo against the click (steady, rushing or dragging) and how far notes stray from that line. It also compares each onset with where energy at the note's own fundamental rises (`pitchRiseOnset`), which the player's timing and the clicks don't affect (D52).
+
+Ten of the owner's takes, one per shape and tempo, are fixtures: `g-medium/rhythm-<take>-<tempo>` (from 2026-11-27). Three of them drifted from the click (steps at 60, holds at 90, fast repeats at 60); their `notes` say so. `check` runs a rhythm take differently from the others: every written note must be found (within 60 c, as rhythm doesn't judge pitch), a repeat take must have no extra notes, and the onsets must agree with the pitch rise, median within 30 ms and 90% within 100 ms. `clickcheck` skips them: they already hold the app's clicks, recorded about 20 dB above the flute.
 
 ## Sound delay takes
 

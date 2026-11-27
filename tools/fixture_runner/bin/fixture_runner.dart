@@ -336,8 +336,8 @@ bool _delaySelftest(NativeCore core) {
 }
 
 /// Informational (docs/08 M3-D): how close the segmenter's note onsets come
-/// to the written timing on synthetic rhythm takes, before onset detection
-/// is tuned on real ones.
+/// to the written timing on synthetic rhythm takes, where the true start is
+/// known, and how the pitch-rise reference lands on them.
 void _rhythmBaseline(NativeCore core) {
   stdout.writeln('\nRhythm baseline (synthetic, G medium, segmenter onsets; information only)');
   const sa = 391.08;
@@ -364,6 +364,9 @@ void _rhythmBaseline(NativeCore core) {
         matraFrames: 60 / tempo * sampleRate,
         delayFrames: 0,
         sampleRate: sampleRate,
+        tuning: Tuning.just,
+        samples: r.synth.samples,
+        saHz: sa,
       );
       stdout.writeln('  ${'$name $tempo'.padRight(11)} $report');
     }
@@ -371,9 +374,10 @@ void _rhythmBaseline(NativeCore core) {
 }
 
 /// Rhythm takes (docs/08 M3-D): each note's detected onset against where
-/// it should fall: the label's sam, the written timing and tempo, and the
-/// sound delay measured on the phone. Information until onset detection is
-/// tuned; always returns true.
+/// it should fall (the label's sam, the written timing and tempo, and the
+/// sound delay measured on the phone), the player's tempo, and the onsets
+/// against the pitch rise (D52). A report for any folder of takes, raw pulls
+/// included; `check` holds the fixtures to limits. Always returns true.
 bool rhythmTakes(NativeCore core, String dir) {
   final labels = Directory(dir).existsSync()
       ? (Directory(dir)
@@ -411,9 +415,13 @@ bool rhythmTakes(NativeCore core, String dir) {
       matraFrames: 60 / tempo * wav.sampleRate,
       delayFrames: (delayMs * wav.sampleRate / 1000).round(),
       sampleRate: wav.sampleRate,
+      samples: wav.samples,
+      saHz: sa,
     );
     stdout.writeln('${label.path.substring(dir.length + 1)} (${tempo.round()} a minute): $report');
-    stdout.writeln('    each: ${report.errorsMs.map((e) => e.round()).join(' ')} ms');
+    stdout.writeln(
+      '    each against the click: ${report.errorsMs.map((e) => e.round()).join(' ')} ms',
+    );
   }
   if (found == 0) stdout.writeln('No rhythm takes in $dir yet (docs/07, Rhythm takes).');
   return true;
@@ -543,6 +551,10 @@ bool check(NativeCore core, String dir, {double? clicksDb}) {
     final yaml = loadYaml(label.readAsStringSync()) as YamlMap;
     final wavPath = label.path.replaceAll(RegExp(r'\.yaml$'), '.wav');
     if (!File(wavPath).existsSync() || yaml['played'] == null) continue;
+    // Rhythm takes were recorded with the app's own clicks, about 20 dB
+    // above the flute: mixing in more clicks tests nothing realistic (D52).
+    final rhythm = yaml['rhythm'] != null && yaml['sam_frame'] != null;
+    if (rhythm && clicksDb != null) continue;
 
     final wav = readWav(wavPath);
     final sa = _fixtureSa(core, label, yaml);
@@ -570,6 +582,13 @@ bool check(NativeCore core, String dir, {double? clicksDb}) {
       saHz: sa,
       config: SegmenterConfig(sampleRate: wav.sampleRate, floorCents: -600),
     );
+    if (rhythm) {
+      final (ok, report) = _checkRhythm(notes, yaml, samples, wav.sampleRate, sa);
+      if (!ok) allOk = false;
+      stdout.writeln('${ok ? 'PASS' : 'FAIL'}  ${label.path.substring(dir.length + 1)}');
+      if (!ok) stdout.writeln('      ${report.toString().replaceAll('\n', '\n      ')}');
+      continue;
+    }
     // A long note that splits in two is not a mismatch unless the take is
     // about repeated notes (docs/05 phrase judging merges them the same way).
     final countRepeats = yaml['count_repeats'] == true;
@@ -584,6 +603,38 @@ bool check(NativeCore core, String dir, {double? clicksDb}) {
     }
   }
   return allOk;
+}
+
+/// A rhythm take (docs/07, Rhythm takes): every written note is found, a
+/// take about repeated swars has nothing extra, and the onsets agree with
+/// where each note's pitch rises in the audio: median within 30 ms, 90%
+/// within 100 ms (D52). The player's own timing isn't checked.
+(bool, OnsetReport) _checkRhythm(
+  List<DetectedNote> notes,
+  YamlMap yaml,
+  Float32List samples,
+  int sampleRate,
+  double sa,
+) {
+  final tempo = (yaml['tempo'] as num).toDouble();
+  final delayMs = (yaml['sound_delay_ms'] as num?)?.toDouble() ?? 0;
+  final r = scoreOnsets(
+    notes,
+    parsePhrase('${yaml['rhythm']}'),
+    samFrame: yaml['sam_frame'] as int,
+    matraFrames: 60 / tempo * sampleRate,
+    delayFrames: (delayMs * sampleRate / 1000).round(),
+    sampleRate: sampleRate,
+    samples: samples,
+    saHz: sa,
+  );
+  final repeats = yaml['count_repeats'] == true;
+  final ok =
+      r.matched == r.expected &&
+      (!repeats || r.extra == 0) &&
+      r.detectorMedianMs <= 30 &&
+      r.detectorP90Ms <= 100;
+  return (ok, r);
 }
 
 /// `sa_hz:` from the label when it was calibrated, else measured from the

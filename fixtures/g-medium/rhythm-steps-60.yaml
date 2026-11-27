@@ -1,0 +1,23 @@
+take: rhythm-steps
+flute: 'G medium'
+recorded: 2026-11-27T19:53:26.317680
+seconds: 23.3
+sa_hz: 392.19
+sa_calibrated: true
+drone: false
+drone_volume: 0.50
+drone_first_string: pa
+drone_filter: true
+input_preset: unprocessed
+backend: AAudio
+phone: 'moto g45 5G'
+source_file: 'rhythm-steps-3.wav (Test tools, 2026-11-27)'
+device: 'V1UGS35H.75-14-9-3-1-6'
+played: 'S R G m P D N S'' S'' N D P m G R S'
+rhythm: 'S R G m | P D N S'' || S'' N D P | m G R S ||'
+taal: keherwa
+tempo: 60
+sam_frame: 234240
+click_frames: [42240, 90240, 138240, 186240, 234240, 282240, 330240, 378240, 426240, 474240, 522240, 570240, 618240, 666240, 714240, 762240, 810240, 858240, 906240, 954240, 1002240, 1050240]
+sound_delay_ms: 422.7
+notes: "Played with the flute. From the second note on the player is ahead of the click by 0.1-0.4 of a matra (rushing about 2%). Kept for that: the checks compare onsets with the audio, not with the click."

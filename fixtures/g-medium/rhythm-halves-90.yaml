@@ -1,0 +1,23 @@
+take: rhythm-halves
+flute: 'G medium'
+recorded: 2026-11-27T20:03:20.901687
+seconds: 16.3
+sa_hz: 392.19
+sa_calibrated: true
+drone: false
+drone_volume: 0.50
+drone_first_string: pa
+drone_filter: true
+input_preset: unprocessed
+backend: AAudio
+phone: 'moto g45 5G'
+source_file: 'rhythm-halves-7.wav (Test tools, 2026-11-27)'
+device: 'V1UGS35H.75-14-9-3-1-6'
+played: 'S R G R S R G m G R G m P m G R G R S S'
+rhythm: 'SR GR S - | RG mG R - || Gm Pm G - | RG RS S - ||'
+taal: keherwa
+tempo: 90
+sam_frame: 164480
+click_frames: [36480, 68480, 100480, 132480, 164480, 196480, 228480, 260480, 292480, 324480, 356480, 388480, 420480, 452480, 484480, 516480, 548480, 580480, 612480, 644480, 676480, 708480]
+sound_delay_ms: 422.7
+notes: "Played with the flute, steady."

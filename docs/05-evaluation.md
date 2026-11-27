@@ -110,7 +110,7 @@ For phrases, a row of arrows shows which way to move each note: ↑ (play higher
 ## 5. Judging rhythm (v0.3)
 
 - **Expected onsets** come from the phrase and the tempo, offset from the listen window's start. The player starts after a count-in, so the downbeat is known. Alternatively ("free start" setting) the first played onset anchors the phrase.
-- **Played onsets** = note onsets from step 3, minus the measured loopback latency, refined with an energy-based onset detector (spectral flux) for notes that start from silence.
+- **Played onsets** = note onsets from step 3, minus the measured loopback latency. On the owner's rhythm takes these sit a median 8–25 ms after the rise of energy at the note's own pitch. No energy-based detector refines them: the metronome reaches the mic louder than the flute, and such a detector locks onto the clicks (decisions.md D52).
 - **Timing error** per note = played − expected onset, as a fraction of a matra. Default tolerance ±15% of a matra.
 - **Duration error** = played vs expected duration ratio; default tolerance ±25%. Releases are less precise than onsets on flute, so duration counts less than onset.
 - **Tempo drift:** fit a line through (expected, played) onsets. The slope shows rushing or dragging. Report it rather than failing on it at first.
