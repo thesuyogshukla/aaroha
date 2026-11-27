@@ -151,4 +151,29 @@ void main() {
       }
     });
   });
+
+  test('timing pools the last timed notes of every swar, newest kept', () {
+    final t0 = DateTime(2026, 11, 28);
+    NoteOutcome n(String swar, int minute, double? offset) => NoteOutcome(
+      target: parsePhrase(swar).pitches.single,
+      verdict: Verdict.pass,
+      at: t0.add(Duration(minutes: minute)),
+      offset: offset,
+    );
+    expect(PracticeHistory([n('S', 0, null)]).timing(), isNull, reason: 'nothing timed yet');
+    final h = PracticeHistory([
+      n('S', 0, -0.5), // the oldest: dropped with last: 4
+      n('S', 1, 0.05),
+      n('R', 2, 0.2),
+      n('G', 3, -0.2),
+      n('m', 4, 0.1),
+      n('P', 5, null),
+    ]);
+    final all = h.timing()!;
+    expect([all.count, all.onTime, all.early, all.late], [5, 2, 2, 1]);
+    final recent = h.timing(last: 4)!;
+    expect([recent.count, recent.onTime, recent.early, recent.late], [4, 2, 1, 1]);
+    expect(recent.medianOffset, 0.1);
+    expect(recent.onTimeShare, 0.5);
+  });
 }

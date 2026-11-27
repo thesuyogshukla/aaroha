@@ -135,6 +135,8 @@ Recorded per attempt; computed from the `attempts` table.
 
 As built (M2-C, *Your ear* screen): stats use each swar's **last 40 first tries**, from flute sessions and Listen & name alike, pooled across flutes (hearing is relative to Sa). A first try counts as right when the swar was right, in tune or not (D31); *missing* counts as a miss but not as a confusion, and out-of-tune right swars are not confusions; nor is a note 50 c or more off whose nearest allowed swar is still the target (a miss, not a mix-up). The screen shows right-first-time per swar, the *Heard as* grid (wrong swars and wrong octaves), and mean intonation per swar on the selected flute, in the current tuning, from flute attempts on the right swar only (tapped answers say nothing about intonation). Played cents are rebuilt from each stored deviation in that session's own tuning, so just and equal-tempered sessions line up. Extra notes in a phrase have no target and are left out.
 
+**Timing** (M3-E): once Rhythm practice has timed some notes, *Your ear* adds a Timing section from the last 200 timed first-try notes, all swars together: the share on time (within ±15% of a matra), how many were early and late, and which way the player leans, from the middle offset ("On the whole you come in a little late, by about 8% of a matra"; within 5% reads as on the beat). Timing is pooled across swars because it belongs to the player's hands and count, not to a swar.
+
 ## 8. Adaptive target picking
 
 When choosing the next target from the allowed set (single swar, or which phrase to drill):

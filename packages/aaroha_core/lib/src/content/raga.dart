@@ -138,10 +138,13 @@ class Alankar {
   final String name;
   final List<int> pattern;
 
-  /// Parses an alankar file: a list of `{id, name, pattern}` maps.
+  /// Parses an alankar file: a map with `source`, `license` and `alankars`,
+  /// a list of `{id, name, pattern}` maps (docs/06). A bare list, the format
+  /// before the licence check, still reads.
   static List<Alankar> listFromYaml(String text) {
-    final y = loadYaml(text);
-    if (y is! YamlList) throw const FormatException('an alankar file must be a list');
+    final file = loadYaml(text);
+    final y = file is YamlMap ? file['alankars'] : file;
+    if (y is! YamlList) throw const FormatException('an alankar file must list its alankars');
     return [
       for (final a in y)
         if (a is YamlMap)

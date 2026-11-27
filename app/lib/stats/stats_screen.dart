@@ -36,6 +36,14 @@ class StatsScreen extends ConsumerWidget {
   }
 }
 
+/// Which way the player's timing leans, from the middle offset (matras).
+String _lean(double median) {
+  final pct = (100 * median.abs()).round();
+  if (pct < 5) return 'You come in right on the beat, on the whole.';
+  return 'On the whole you come in a little ${median < 0 ? 'early' : 'late'}, '
+      'by about $pct% of a matra.';
+}
+
 class _StatsView extends StatelessWidget {
   const _StatsView({
     required this.history,
@@ -59,6 +67,7 @@ class _StatsView extends StatelessWidget {
     final targets = _sorted(history.targets);
     final confusions = history.confusions;
     final intonation = history.intonation(settings.tuning.tuning, fluteId: fluteId);
+    final timing = history.timing();
 
     Widget heading(String text, String note) => Padding(
       padding: const EdgeInsets.only(top: 24, bottom: 8),
@@ -116,6 +125,20 @@ class _StatsView extends StatelessWidget {
                 ),
             ],
           ),
+        if (timing != null) ...[
+          heading(
+            'Timing',
+            'Your last ${timing.count} timed notes in Rhythm practice, first tries. '
+                'On time is within ${(100 * const RhythmSettings().tolerance).round()}% of a matra.',
+          ),
+          Text(
+            '${(100 * timing.onTimeShare).round()}% on time · ${timing.early} early · '
+            '${timing.late} late',
+            style: theme.textTheme.titleMedium,
+          ),
+          const SizedBox(height: 4),
+          Text(_lean(timing.medianOffset), style: theme.textTheme.bodyMedium),
+        ],
       ],
     );
   }

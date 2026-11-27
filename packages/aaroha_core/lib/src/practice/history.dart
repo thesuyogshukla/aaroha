@@ -1,4 +1,5 @@
 import '../eval/judge.dart';
+import '../eval/rhythm.dart';
 import '../model/swar.dart';
 import '../model/tuning.dart';
 
@@ -12,6 +13,7 @@ class NoteOutcome {
     this.cents,
     this.fluteId,
     this.named = false,
+    this.offset,
   });
 
   final Pitch target;
@@ -28,8 +30,32 @@ class NoteOutcome {
   /// From Listen & name rather than playing.
   final bool named;
 
+  /// Rhythm practice: played minus written onset, in matras (docs/05 §5).
+  final double? offset;
+
   /// The ear got it: the right swar, in tune or not.
   bool get rightSwar => verdict == Verdict.pass || verdict == Verdict.outOfTune;
+}
+
+/// How the player's timed notes have fallen against the click.
+class TimingRecord {
+  const TimingRecord({
+    required this.count,
+    required this.onTime,
+    required this.early,
+    required this.late,
+    required this.medianOffset,
+  });
+
+  final int count;
+  final int onTime;
+  final int early;
+  final int late;
+
+  /// The middle offset, in matras: which way the player leans.
+  final double medianOffset;
+
+  double get onTimeShare => onTime / count;
 }
 
 class SwarRecord {
@@ -116,6 +142,27 @@ class PracticeHistory {
     final entries = confusions.entries.where((e) => e.value >= minCount).toList()
       ..sort((a, b) => b.value - a.value);
     return [for (final e in entries) e.key];
+  }
+
+  /// Timing over the most recent [last] timed first-try notes from rhythm
+  /// practice, all swars together; null before any (docs/08 M3-E).
+  TimingRecord? timing({int last = 200, RhythmSettings settings = const RhythmSettings()}) {
+    final timed = [
+      for (final list in _byTarget.values)
+        for (final o in list)
+          if (o.offset != null) o,
+    ]..sort((a, b) => a.at.compareTo(b.at));
+    if (timed.isEmpty) return null;
+    final recent = timed.length <= last ? timed : timed.sublist(timed.length - last);
+    final offsets = [for (final o in recent) o.offset!]..sort();
+    final tol = settings.tolerance;
+    return TimingRecord(
+      count: offsets.length,
+      onTime: offsets.where((o) => o.abs() <= tol).length,
+      early: offsets.where((o) => o < -tol).length,
+      late: offsets.where((o) => o > tol).length,
+      medianOffset: offsets[offsets.length ~/ 2],
+    );
   }
 
   /// Mean played-minus-target cents per swar, in [tuning], over recent flute

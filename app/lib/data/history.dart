@@ -31,6 +31,7 @@ NoteOutcome? outcomeFromJson(
     cents: named || deviation == null ? null : tuning.centsOf(targetPitch) + deviation,
     fluteId: fluteId,
     named: named,
+    offset: (note['offset'] as num?)?.toDouble(),
   );
 }
 

@@ -23,6 +23,21 @@ void main() {
       expect(equal.rightSwar, isTrue);
     });
 
+    test('a rhythm note keeps its timing', () {
+      final note = {
+        'target': 'R',
+        'verdict': 'pass',
+        'played': 'R',
+        'deviation': 3.0,
+        'offset': -0.2,
+      };
+      expect(outcomeFromJson(note, tuning: Tuning.just, at: at)!.offset, -0.2);
+      expect(
+        outcomeFromJson({'target': 'R', 'verdict': 'pass'}, tuning: Tuning.just, at: at)!.offset,
+        isNull,
+      );
+    });
+
     test('named answers carry no intonation; extra notes are skipped', () {
       final named = outcomeFromJson(
         {'target': 'G', 'verdict': 'wrongSwar', 'played': 'm', 'deviation': 100.0},

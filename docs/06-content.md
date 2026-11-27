@@ -11,7 +11,7 @@ Training material, stored as data files in `content/` and bundled as Flutter ass
 | Traditional bandish / gat | Yes, if public domain | Old published notation (e.g. Bhatkhande's Kramik Pustak Malika, out of copyright) — record the source in the file |
 | Film songs, modern compositions, other people's arrangements | **No** | Only ever user-entered, stored locally |
 
-Every content file has `source` and `license` fields. A CI check (M5) fails if any shipped file lacks them.
+Every content file has `source` and `license` fields, and `license` is `public-domain` or `original` (written for Aaroha). A core test (`content_test.dart`, D55) fails if any file under `content/` lacks them or names another licence. The same check for bundled sounds comes with M5.
 
 ## Alankars
 
@@ -19,21 +19,18 @@ Defined as a pattern applied to a scale, not as fixed notes, so one definition w
 
 ```yaml
 # content/alankars/basic.yaml
-- id: alankar-1
-  name: Straight
-  pattern: [0]                 # each scale degree once, up then down
-- id: alankar-2
-  name: Pairs
-  pattern: [0, 0]              # S S, R R, G G …
-- id: alankar-3
-  name: Groups of three
-  pattern: [0, 1, 2]           # S R G, R G m, G m P …
-- id: alankar-4
-  name: Up two, back one
-  pattern: [0, 1, 0]           # S R S, R G R …
-- id: alankar-5
-  name: Groups of four
-  pattern: [0, 1, 2, 3]
+source: traditional exercises
+license: public-domain
+alankars:
+  - id: alankar-1
+    name: Straight
+    pattern: [0]               # each scale degree once, up then down
+  - id: alankar-2
+    name: Pairs
+    pattern: [0, 0]            # S S, R R, G G …
+  - id: alankar-3
+    name: Groups of three
+    pattern: [0, 1, 2]         # S R G, R G m, G m P …
 ```
 
 As built (M2-D), `content/alankars/basic.yaml` has seven: Straight `[0]`, Pairs `[0, 0]`, Skip one `[0, 2]`, Step and back `[0, 1, 0]`, Groups of three `[0, 1, 2]`, Three and back `[0, 1, 2, 1]`, Groups of four `[0, 1, 2, 3]`.

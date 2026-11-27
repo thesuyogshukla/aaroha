@@ -1,24 +1,26 @@
 # Alankars as patterns of scale-degree offsets (docs/06-content.md).
 # Each pattern is applied from every degree going up, then mirrored coming down.
-# source: traditional exercises; license: public-domain
-- id: alankar-1
-  name: Straight
-  pattern: [0]          # S R G m P D N S', S' N D P m G R S
-- id: alankar-2
-  name: Pairs
-  pattern: [0, 0]       # S S, R R, G G …
-- id: alankar-3
-  name: Skip one
-  pattern: [0, 2]       # S G, R m, G P …
-- id: alankar-4
-  name: Step and back
-  pattern: [0, 1, 0]    # S R S, R G R …
-- id: alankar-5
-  name: Groups of three
-  pattern: [0, 1, 2]    # S R G, R G m …
-- id: alankar-6
-  name: Three and back
-  pattern: [0, 1, 2, 1] # S R G R, R G m G …
-- id: alankar-7
-  name: Groups of four
-  pattern: [0, 1, 2, 3] # S R G m, R G m P …
+source: traditional exercises
+license: public-domain
+alankars:
+  - id: alankar-1
+    name: Straight
+    pattern: [0]          # S R G m P D N S', S' N D P m G R S
+  - id: alankar-2
+    name: Pairs
+    pattern: [0, 0]       # S S, R R, G G …
+  - id: alankar-3
+    name: Skip one
+    pattern: [0, 2]       # S G, R m, G P …
+  - id: alankar-4
+    name: Step and back
+    pattern: [0, 1, 0]    # S R S, R G R …
+  - id: alankar-5
+    name: Groups of three
+    pattern: [0, 1, 2]    # S R G, R G m …
+  - id: alankar-6
+    name: Three and back
+    pattern: [0, 1, 2, 1] # S R G R, R G m G …
+  - id: alankar-7
+    name: Groups of four
+    pattern: [0, 1, 2, 3] # S R G m, R G m P …

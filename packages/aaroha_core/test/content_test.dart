@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:aaroha_core/aaroha_core.dart';
 import 'package:test/test.dart';
+import 'package:yaml/yaml.dart';
 
 List<Pitch> ps(String ascii) => parsePhrase(ascii).pitches;
 
@@ -17,6 +18,28 @@ List<Raga> loadRagas() => [
 
 void main() {
   group('shipped content', () {
+    test('every content file says where it comes from and may ship (CLAUDE.md rule 9)', () {
+      // docs/06: public domain (traditional) or written for Aaroha. A film
+      // song or other copyrighted tune is only ever user-entered.
+      const allowed = {'public-domain', 'original'};
+      final files = [
+        for (final f in contentDir.listSync(recursive: true))
+          if (f is File && f.path.endsWith('.yaml')) f,
+      ];
+      expect(
+        files.length,
+        greaterThanOrEqualTo(13),
+        reason: '8 ragas, the alankars, 4 rhythm files',
+      );
+      for (final f in files) {
+        final y = loadYaml(f.readAsStringSync());
+        expect(y, isA<YamlMap>(), reason: '${f.path}: a map with source and license');
+        final map = y as YamlMap;
+        expect('${map['source'] ?? ''}'.trim(), isNotEmpty, reason: '${f.path}: source');
+        expect(allowed, contains(map['license']), reason: '${f.path}: license');
+      }
+    });
+
     test('every raga file parses, with source and license', () {
       final ragas = loadRagas();
       expect(ragas.map((r) => r.id), [
