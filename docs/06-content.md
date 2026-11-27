@@ -130,7 +130,7 @@ lessons:
       …
 ```
 
-As built (M3-E, D53): one file per taal, `keherwa.yaml` (steps and holds, holds across the avartan, two swars in a matra, rests, repeated swars, alankars in rhythm) and `dadra.yaml` (steps and holds, two swars in a matra), 60 phrases in all, written for Aaroha. Each phrase is one vibhag or one avartan, ends on a vibhag (checked against the taal), and has at least two notes. They move mostly by step between madhya Sa and Pa, so the attention goes on the timing. A session plays its lesson's phrases in order, then at random without the same one twice in a row. Phrases aren't cut to the phrase level: their length is part of the rhythm. Teentaal and rupak lessons come next.
+As built (M3-E, D53): one file per taal, `keherwa.yaml` (steps and holds, holds across the avartan, two swars in a matra, rests, repeated swars, alankars in rhythm) `dadra.yaml` (steps and holds, two swars in a matra), `teentaal.yaml` (one and two vibhags, two swars in a matra) and `rupak.yaml` (steps and holds, two swars in a matra), 88 phrases in all, written for Aaroha. A teentaal avartan is 16 matras, too long to hold in the ear at first, so its phrases are one or two vibhags; rupak's are its first vibhag, its first two, or a whole avartan. Each phrase is one vibhag or one avartan, ends on a vibhag (checked against the taal), and has at least two notes. They move mostly by step between madhya Sa and Pa, so the attention goes on the timing. A session plays its lesson's phrases in order, then at random without the same one twice in a row. Phrases aren't cut to the phrase level: their length is part of the rhythm. 
 
 ## Content for each mode
 
@@ -140,5 +140,5 @@ As built (M3-E, D53): one file per taal, `keherwa.yaml` (steps and holds, holds 
 | Short phrase | random walk over the swar set with small steps, or raga chalan fragments |
 | Alankar | alankar × swar set |
 | Raga | aaroh, avaroh, pakad, chalan; then generated phrases |
-| Rhythm | rhythm lessons (keherwa, dadra), including alankars in rhythm; composition lines later |
+| Rhythm | rhythm lessons (keherwa, dadra, teentaal, rupak), including alankars in rhythm; composition lines later |
 | Composition | full lines, one at a time, then whole avartans |

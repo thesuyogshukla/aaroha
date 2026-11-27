@@ -65,7 +65,10 @@ void main() {
           if (f.path.endsWith('.yaml'))
             ...RhythmLesson.listFromYaml(File(f.path).readAsStringSync()),
       ];
-      expect({for (final l in lessons) l.taal}, {Taal.keherwa, Taal.dadra});
+      expect(
+        {for (final l in lessons) l.taal},
+        {Taal.keherwa, Taal.dadra, Taal.teentaal, Taal.rupak},
+      );
       expect(lessons.map((l) => l.id).toSet().length, lessons.length);
       final low = Tuning.equal.centsOf(const Pitch(Swar.pa, -1));
       final high = Tuning.equal.centsOf(const Pitch(Swar.pa, 1));

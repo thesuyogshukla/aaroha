@@ -69,6 +69,12 @@ int countInLength(Taal? taal) {
   return last < 3 ? 3 : last;
 }
 
+/// With a free start and a taal, how many matras after the call the next
+/// sam comes: the player is told to start on a sam, so the listening window
+/// waits that long too (D54). 0 when the call is whole avartans.
+int matrasToNextSam(int callMatras, Taal? taal) =>
+    taal == null ? 0 : (taal.matras - callMatras % taal.matras) % taal.matras;
+
 /// The clicks of one round (docs/08 M3-B).
 ///
 /// With [countIn], a count-in leads into the call, which starts on sam, and

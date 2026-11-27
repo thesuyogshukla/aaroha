@@ -155,4 +155,14 @@ void main() {
       isEmpty,
     );
   });
+
+  test('a free start waits for the next sam after the call', () {
+    expect(matrasToNextSam(4, Taal.teentaal), 12);
+    expect(matrasToNextSam(8, Taal.keherwa), 0);
+    expect(matrasToNextSam(5, Taal.rupak), 2);
+    expect(matrasToNextSam(6, null), 0);
+    // It agrees with where the turn's first sam is clicked.
+    final r = roundClicks(callMatras: 4, responseMatras: 16, taal: Taal.teentaal, metronome: true);
+    expect(r.clicks[r.turnSams.first].matra - r.responseAt, matrasToNextSam(4, Taal.teentaal));
+  });
 }

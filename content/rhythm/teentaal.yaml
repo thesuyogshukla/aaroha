@@ -1,0 +1,28 @@
+# Rhythm lessons in teentaal (4+4+4+4), easiest first (docs/06, Rhythm).
+# A whole avartan is 16 matras, too long to hold in the ear at first, so each
+# phrase is one vibhag (4 matras) or two (8), starting on sam.
+# Notation per docs/03.
+taal: teentaal
+source: original, written for Aaroha
+license: original
+lessons:
+  - id: teentaal-1
+    name: One and two vibhags
+    phrases:
+      - "S R G m"
+      - "S - R -"
+      - "G - m P"
+      - "P - m G"
+      - "S - R G | m - - -"
+      - "S R G - | m G R -"
+      - "P - m - | G - R -"
+      - "S R G m | P - - -"
+  - id: teentaal-2
+    name: Two swars in a matra
+    phrases:
+      - "SR G m -"
+      - "S RG m -"
+      - "G mP m -"
+      - "SR GR S - | RG mG R -"
+      - "S - RG m | P - mG R"
+      - "Gm P mG R | GR S - -"

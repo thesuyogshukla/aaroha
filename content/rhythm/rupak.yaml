@@ -1,0 +1,28 @@
+# Rhythm lessons in rupak (3+2+2), easiest first (docs/06, Rhythm).
+# Rupak's sam is khali (a wave), so its first click is the soft one.
+# Each phrase is the first vibhag (3 matras), the first two (5) or a whole
+# avartan (7). Notation per docs/03.
+taal: rupak
+source: original, written for Aaroha
+license: original
+lessons:
+  - id: rupak-1
+    name: Steps and holds
+    phrases:
+      - "S R -"
+      - "S R G | m P"
+      - "R - G | m -"
+      - "S R G | m - | P - ||"
+      - "S - R | G - | m - ||"
+      - "G m P | m G | R - ||"
+      - "S - - | R - | G - ||"
+      - "P - m | G R | S - ||"
+  - id: rupak-2
+    name: Two swars in a matra
+    phrases:
+      - "SR G -"
+      - "S RG m | P -"
+      - "SR G - | Gm P | m - ||"
+      - "S RG m | P mG | R - ||"
+      - "SR GR S | RG mG | R - ||"
+      - "G mP m | GR S | - - ||"

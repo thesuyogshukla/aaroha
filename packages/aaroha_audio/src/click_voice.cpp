@@ -56,9 +56,10 @@ void ClickVoice::start(const ar_click& click) {
   start_ = click.time;
   length_ = static_cast<int64_t>(s.length_s * sample_rate_);
   attack_ = std::max<int64_t>(1, static_cast<int64_t>(0.001 * sample_rate_));
-  // Band-passed white noise is quieter than the noise itself; 2.5 brings a
-  // full-level sam to about the flute voice's peak.
-  gain_ = static_cast<float>(2.5 * s.gain * std::clamp(click.amplitude, 0.0f, 1.0f));
+  // Band-passed white noise is quieter than the noise itself. 1.5 puts a
+  // full-level sam where a 0.6 sam was before (D54): on the moto g45 that
+  // just reaches full scale in its own mic, so no setting can clip it.
+  gain_ = static_cast<float>(1.5 * s.gain * std::clamp(click.amplitude, 0.0f, 1.0f));
   envelope_ = 1;
   decay_ = static_cast<float>(std::exp(-1.0 / (s.decay_s * sample_rate_)));
   active_ = true;

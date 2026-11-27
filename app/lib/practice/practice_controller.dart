@@ -576,6 +576,10 @@ class PracticeController extends Notifier<PracticeState?> {
     // With a count-in, the call waits for it (docs/08 M3-B).
     final origin = _audio.time + (0.3 * sr).round();
     final countIn = s.settings.clicks && s.settings.countIn ? countInLength(s.settings.taal) : 0;
+    // A free start in a taal begins on the next sam after the call (D54).
+    final toSam = s.settings.clicks && !s.settings.countIn && !single
+        ? matrasToNextSam(_wholeMatras(phrase.length), s.settings.taal)
+        : 0;
     final call = scheduleCall(
       phrase,
       saHz: s.flute.saHz,
@@ -595,7 +599,7 @@ class PracticeController extends Notifier<PracticeState?> {
     _listen(
       from: _listenAfterCall(),
       phraseSeconds: callSeconds,
-      leadSeconds: countIn * matraSeconds,
+      leadSeconds: (countIn + toSam) * matraSeconds,
     );
     final clicks = _startClicks(
       origin: origin,
