@@ -16,6 +16,7 @@ class TimingStrip extends StatelessWidget {
     required this.phrase,
     required this.result,
     this.taal,
+    this.start = 0,
     this.script = Script.latin,
     this.showNames = true,
   });
@@ -23,6 +24,10 @@ class TimingStrip extends StatelessWidget {
   final Phrase phrase;
   final AttemptResult result;
   final Taal? taal;
+
+  /// Where in the taal's cycle the phrase starts, in matras after sam (D57):
+  /// the vibhag marks fall where the taal puts them.
+  final int start;
   final Script script;
 
   /// False while the target is hidden: the bars are drawn without swars.
@@ -65,6 +70,7 @@ class TimingStrip extends StatelessWidget {
             ],
             played: played,
             taal: taal,
+            start: start,
             text: theme.textTheme.labelSmall ?? const TextStyle(fontSize: 11),
             grid: scheme.outlineVariant,
             writtenColor: scheme.surfaceContainerHighest,
@@ -96,6 +102,7 @@ class _StripPainter extends CustomPainter {
     required this.written,
     required this.played,
     required this.taal,
+    required this.start,
     required this.text,
     required this.grid,
     required this.writtenColor,
@@ -107,6 +114,7 @@ class _StripPainter extends CustomPainter {
   final List<_Bar> written;
   final List<({double from, double to, bool good})?> played;
   final Taal? taal;
+  final int start;
   final TextStyle text;
   final Color grid, writtenColor, good, off;
 
@@ -133,7 +141,7 @@ class _StripPainter extends CustomPainter {
       }
     }
     for (var m = 0; m <= length.ceil(); m++) {
-      final inCycle = taal == null ? -1 : m % taal!.matras;
+      final inCycle = taal == null ? -1 : (start + m) % taal!.matras;
       final strong = starts.containsKey(inCycle);
       canvas.drawLine(
         Offset(x(m.toDouble()), 0),
@@ -192,5 +200,5 @@ class _StripPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_StripPainter old) =>
-      old.length != length || old.played != played || old.written != written;
+      old.length != length || old.played != played || old.written != written || old.start != start;
 }

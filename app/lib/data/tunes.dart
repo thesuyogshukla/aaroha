@@ -16,6 +16,20 @@ extension StoredTuneParsed on StoredTune {
   Tune? get parsed => parseTune(title, notation).tune;
 }
 
+/// How [tune] is practised for timing (D57): "Timed in Teentaal, each line
+/// from matra 9 (khali)", or how to make it timed.
+String tuneTiming(Tune tune) {
+  final taal = tune.taal;
+  if (taal == null) return 'Pitch only: add a taal line at the top to have your timing judged';
+  final beat = switch (taal.beatAt(tune.start)) {
+    Beat.sam => ' (sam)',
+    Beat.khali => ' (khali)',
+    Beat.tali => ' (tali)',
+    Beat.plain => '',
+  };
+  return 'Timed in ${taal.label}, each line from matra ${tune.start + 1}$beat';
+}
+
 /// Saves a tune: a new one when [id] is null. Returns its id.
 Future<int> saveTune(
   AppDatabase db, {

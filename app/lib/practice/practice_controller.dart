@@ -25,11 +25,15 @@ import 'session_recorder.dart';
 enum PracticePhase { starting, calling, listening, answering, verdict, paused, finished, error }
 
 class RoundRecord {
-  RoundRecord(this.number, this.phrase, [this.label]) : target = phrase.pitches;
+  RoundRecord(this.number, this.phrase, [this.label, this.start = 0]) : target = phrase.pitches;
   final int number;
 
   /// The target with its written timing, as the call plays it (docs/08 M3-A).
   final Phrase phrase;
+
+  /// Where in the taal's cycle the target starts, in matras after sam: 0
+  /// (sam) except for a line of a tune that comes in mid-cycle (D57).
+  final int start;
 
   /// The target's swars in order, which are judged.
   final List<Pitch> target;
@@ -252,12 +256,14 @@ class PracticeController extends Notifier<PracticeState?> {
     final raga = m.raga;
     // An alankar is one walk up and down: it sets its own number of rounds.
     if (m.rounds != null) settings = settings.copyWith(rounds: m.rounds);
-    // Rhythm practice clicks every matra, in its lesson's taal.
-    if (m.taal != null) settings = settings.copyWith(metronome: true, taalId: m.taal!.id);
+    // Rhythm practice and timed tunes click every matra in their taal, and
+    // are timed (D53, D57). Naming a tune has no timing to judge.
+    final timed = m.taal != null && !settings.naming;
+    if (timed) settings = settings.copyWith(metronome: true, taalId: m.taal!.id);
     String? timingNote;
-    _timing = rhythm;
+    _timing = timed;
     _timingDelayMs = null;
-    if (rhythm) {
+    if (timed) {
       // Timing needs the sound's round trip: measured on the speaker only.
       final route = await currentOutputRoute();
       if (route.measurable) {
@@ -431,7 +437,8 @@ class PracticeController extends Notifier<PracticeState?> {
           rounds: null,
           keypad: {for (final l in tune.lines) ...l.pitches}.toList()..sort(_byPitch),
           title: tune.title,
-          taal: null,
+          // A tune with a taal is timed (D57).
+          taal: tune.taal,
         );
       case PracticeMode.rhythm:
         final content = await ref.read(contentProvider.future);
@@ -588,6 +595,7 @@ class PracticeController extends Notifier<PracticeState?> {
       s.rounds.length + 1,
       drill.phrase,
       drill.label.isEmpty ? null : drill.label,
+      _tuneDrill?.lastStart ?? 0,
     );
     s.rounds.add(round);
     round.id = await _db
@@ -612,7 +620,9 @@ class PracticeController extends Notifier<PracticeState?> {
     // With a count-in, the call waits for it (docs/08 M3-B).
     final origin = _audio.time + (0.3 * sr).round();
     final countIn = s.settings.clicks && s.settings.countIn ? countInLength(s.settings.taal) : 0;
-    // A free start in a taal begins on the next sam after the call (D54).
+    // A free start in a taal begins where the phrase does in the cycle, the
+    // next time it comes round after the call: sam for most phrases (D54,
+    // D57).
     final toSam = s.settings.clicks && !s.settings.countIn && !single
         ? matrasToNextSam(_wholeMatras(phrase.length), s.settings.taal)
         : 0;
@@ -645,6 +655,8 @@ class PracticeController extends Notifier<PracticeState?> {
     _recorder?.log('call', {
       'round': s.round!.number,
       'target': printNotation(phrase),
+      // Where the target starts in the taal's cycle, when not on sam (D57).
+      if (s.round!.start != 0) 'start': s.round!.start,
       'notes': [
         for (final n in call.notes) {'start': n.start, 'duration': n.duration, 'hz': n.hz},
       ],
@@ -709,6 +721,7 @@ class PracticeController extends Notifier<PracticeState?> {
             taal: s.taal,
             metronome: s.metronome,
             countIn: s.countIn,
+            start: state!.round!.start,
           )
         : roundClicks(
             callMatras: callMatras,
@@ -716,6 +729,7 @@ class PracticeController extends Notifier<PracticeState?> {
             taal: s.taal,
             metronome: s.metronome,
             countIn: s.countIn,
+            start: state!.round!.start,
           );
     final responseAt = origin + (plan(0).responseAt * matraFrames).round();
     // Clicks until the window could close at the latest (they stop when
@@ -734,7 +748,7 @@ class PracticeController extends Notifier<PracticeState?> {
     );
     _audio.playClicks(clicks);
     // Any sam of the player's turn can start the phrase (docs/05 §5).
-    _sams = [for (final i in p.turnSams) clicks[i].time];
+    _sams = [for (final i in p.turnStarts) clicks[i].time];
     _beats = BeatPlan([
       for (var i = 0; i < clicks.length; i++)
         (time: clicks[i].time, position: p.clicks[i].position),

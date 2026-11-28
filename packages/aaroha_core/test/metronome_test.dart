@@ -127,7 +127,7 @@ void main() {
   });
 
   test('the turn may start on any sam after the call, or on the one counted to', () {
-    List<int> matras(RoundClicks r) => [for (final i in r.turnSams) r.clicks[i].matra];
+    List<int> matras(RoundClicks r) => [for (final i in r.turnStarts) r.clicks[i].matra];
     // Free start: a 4-matra call in keherwa ends mid-cycle; the next sam is
     // 4 matras later, then every 8.
     final free = roundClicks(
@@ -151,7 +151,7 @@ void main() {
     expect(matras(again), [0, 6]);
     // Count-in clicks are never a start, even on sam's position.
     expect(
-      roundClicks(callMatras: 6, responseMatras: 0, taal: Taal.dadra, countIn: true).turnSams,
+      roundClicks(callMatras: 6, responseMatras: 0, taal: Taal.dadra, countIn: true).turnStarts,
       isEmpty,
     );
   });
@@ -163,6 +163,48 @@ void main() {
     expect(matrasToNextSam(6, null), 0);
     // It agrees with where the turn's first sam is clicked.
     final r = roundClicks(callMatras: 4, responseMatras: 16, taal: Taal.teentaal, metronome: true);
-    expect(r.clicks[r.turnSams.first].matra - r.responseAt, matrasToNextSam(4, Taal.teentaal));
+    expect(r.clicks[r.turnStarts.first].matra - r.responseAt, matrasToNextSam(4, Taal.teentaal));
+  });
+
+  test('a phrase that starts mid-cycle: the call, count-in and turn start at its place (D57)', () {
+    // Teentaal, a line starting on matra 9 (khali): 8 matras after sam.
+    final free = roundClicks(
+      callMatras: 8,
+      responseMatras: 24,
+      taal: Taal.teentaal,
+      metronome: true,
+      start: 8,
+    );
+    expect(free.clicks.first.position, 8);
+    expect(free.clicks.first.beat, Beat.khali, reason: 'the call opens on khali');
+    expect(free.clicks[8].position, 0, reason: 'the call runs on into sam');
+    expect(free.clicks[8].beat, Beat.sam);
+    final starts = [for (final i in free.turnStarts) free.clicks[i].matra];
+    expect(starts, [16], reason: 'free: the next matra 9 after the call');
+    expect(starts.first - free.responseAt, matrasToNextSam(8, Taal.teentaal));
+
+    final counted = roundClicks(
+      callMatras: 8,
+      responseMatras: 8,
+      taal: Taal.teentaal,
+      metronome: true,
+      countIn: true,
+      start: 8,
+    );
+    // The count-in is the 4 matras before matra 9: matras 5 to 8, a tali first.
+    final countIn = counted.clicks.where((k) => k.countIn).take(4).toList();
+    expect([for (final k in countIn) k.position], [4, 5, 6, 7]);
+    expect(countIn.first.beat, Beat.tali);
+    expect(
+      [for (final i in counted.turnStarts) counted.clicks[i].matra],
+      [counted.responseAt],
+      reason: 'counted in to the turn at its place',
+    );
+
+    final again = retryClicks(responseMatras: 20, taal: Taal.teentaal, metronome: true, start: 8);
+    expect(again.clicks.first.position, 8);
+    expect([for (final i in again.turnStarts) again.clicks[i].matra], [0, 16]);
+    // Without a taal there is no cycle to start in.
+    expect(roundClicks(callMatras: 4, responseMatras: 4, metronome: true, start: 3).start, 0);
   });
 }

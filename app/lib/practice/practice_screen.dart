@@ -121,6 +121,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                       phrase: round.phrase,
                       result: s.lastResult!,
                       taal: s.settings.taal,
+                      start: round.start,
                       script: s.settings.script,
                       showNames: _targetVisible(s),
                     ),
@@ -308,12 +309,20 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         );
       case PracticePhase.listening:
         final settings = s.settings;
-        // With clicks, where to come in (docs/08 M3-B).
+        // With clicks, where to come in (docs/08 M3-B). A line of a tune may
+        // start mid-cycle (D57).
+        final start = settings.taal == null ? 0 : (s.round?.start ?? 0);
         final cue = !settings.clicks
             ? null
             : settings.countIn
-            ? (settings.taal == null ? 'Come in after the count-in' : 'Come in on sam')
-            : (settings.taal == null ? 'Start on any click' : 'Start on any sam');
+            ? (settings.taal == null || start != 0
+                  ? 'Come in after the count-in'
+                  : 'Come in on sam')
+            : settings.taal == null
+            ? 'Start on any click'
+            : start == 0
+            ? 'Start on any sam'
+            : 'Start on matra ${start + 1}, in any cycle';
         return Column(
           children: [
             Icon(Icons.mic, size: 40, color: theme.colorScheme.primary),

@@ -61,7 +61,8 @@ class TunesScreen extends ConsumerWidget {
     final n = tune.lines.length;
     return [
       '$n ${n == 1 ? 'line' : 'lines'}',
-      if (tune.taal != null) tune.taal!.label,
+      if (tune.taal != null)
+        tune.start == 0 ? tune.taal!.label : '${tune.taal!.label} from matra ${tune.start + 1}',
       if (tune.header['raga'] != null) 'raga ${tune.header['raga']}',
     ].join(' · ');
   }
@@ -147,7 +148,8 @@ class _TuneEditorScreenState extends ConsumerState<TuneEditorScreen> {
           Text(
             'One line of the tune per row, matras separated by spaces: "-" holds, "_" rests, '
             'two swars in a matra share it, | and || are bars. Komal: r g d n; tivra Ma: M; '
-            "mandra .N; taar S'. A taal: line at the top names the taal.",
+            "mandra .N; taar S'. A taal line at the top (taal: teentaal) times the tune, and a "
+            'start line (start: 9) says which matra each line begins on, 1 being sam.',
             style: theme.textTheme.bodySmall,
           ),
           if (!untouched && result.problems.isNotEmpty) ...[
@@ -160,6 +162,8 @@ class _TuneEditorScreenState extends ConsumerState<TuneEditorScreen> {
           ],
           if (tune != null) ...[
             const SizedBox(height: 16),
+            Text(tuneTiming(tune), style: theme.textTheme.bodyMedium),
+            const SizedBox(height: 8),
             for (var i = 0; i < tune.lines.length; i++)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),

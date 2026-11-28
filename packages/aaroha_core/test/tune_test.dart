@@ -89,4 +89,61 @@ G m P - , P m G R   # second line
       expect(drill.next().label, 'Line 2, part 2');
     });
   });
+
+  group('timed tunes (D57)', () {
+    test('start is a matra of the taal, counted from 1 at sam', () {
+      final t = parseTune('x', 'taal: teentaal\nstart: 9\nG m P - | D P m G || S').tune!;
+      expect([t.start, t.timed], [8, true]);
+      expect(parseTune('x', 'taal: keherwa\nS R').tune!.start, 0);
+      expect(parseTune('x', 'S R').tune!.timed, isFalse);
+      expect(parseTune('x', 'start: 5\nS R').problems.single.message, contains('needs a taal'));
+      expect(
+        parseTune('x', 'taal: dadra\nstart: 7\nS R').problems.single.message,
+        contains('1 to 6'),
+      );
+    });
+
+    test('bars are checked against the taal from the start', () {
+      // From matra 9 of teentaal: | before 13, || before sam.
+      expect(parseTune('x', 'taal: teentaal\nstart: 9\nG m P - | D P m G || S').problems, isEmpty);
+      final wrong = parseTune('x', 'taal: teentaal\nG m P | D P m G ||').problems;
+      expect(wrong.map((p) => p.message), [
+        contains('before matra 4; vibhags of Teentaal begin on 1, 5, 9, 13'),
+        contains('"||" falls before matra 8'),
+      ]);
+      expect(wrong.first.line, 2);
+    });
+
+    test('a line is cut at vibhags, keeping each piece\'s place in the cycle', () {
+      // Keherwa from matra 5 (khali): G m P - | D P m G || S - R G
+      final line = parsePhrase('G m P - | D P m G || S - R G');
+      final pieces = cutAtVibhags(line, Taal.keherwa, start: 4, maxNotes: 4);
+      expect([for (final p in pieces) printNotation(p.phrase)], ['G m P -', 'D P m G', 'S - R G']);
+      expect([for (final p in pieces) p.start], [4, 0, 4]);
+      // Room for more: vibhags join while they fit.
+      final two = cutAtVibhags(line, Taal.keherwa, start: 4, maxNotes: 7);
+      expect([for (final p in two) p.start], [4, 4]);
+      expect(two.first.phrase.pitches, hasLength(7));
+    });
+
+    test('never inside a held note, and leading silence is dropped', () {
+      // The P is held across the vibhag, so the line can't be cut there.
+      final held = cutAtVibhags(parsePhrase('S R G P | - - m G'), Taal.keherwa, maxNotes: 2);
+      expect(held, hasLength(1));
+      // A vibhag that starts with a rest: the piece starts on its first note.
+      final rest = cutAtVibhags(parsePhrase('S R G m | _ _ P D'), Taal.keherwa, maxNotes: 4);
+      expect([for (final p in rest) printNotation(p.phrase)], ['S R G m', 'P D']);
+      expect(rest.last.start, 6, reason: 'P falls on matra 7');
+    });
+
+    test('the drill hands out each piece with its start', () {
+      final tune = parseTune('x', 'taal: keherwa\nstart: 5\nG m P - | D P m G').tune!;
+      final drill = TuneDrill(tune, maxNotes: 4);
+      expect([drill.next().label, drill.lastStart], ['Line 1, part 1', 4]);
+      expect([drill.next().label, drill.lastStart], ['Line 1, part 2', 0]);
+      final untimed = TuneDrill(parseTune('x', 'S R G').tune!);
+      untimed.next();
+      expect(untimed.lastStart, 0);
+    });
+  });
 }

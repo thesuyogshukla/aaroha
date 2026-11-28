@@ -37,6 +37,7 @@ class RoundClicks {
     required this.callAt,
     required this.responseAt,
     required this.countInMatras,
+    this.start = 0,
   });
 
   final List<Click> clicks;
@@ -51,13 +52,18 @@ class RoundClicks {
   /// Matras of each count-in; 0 for a free start.
   final int countInMatras;
 
-  /// Indexes into [clicks] of the sams the player's turn may start on
-  /// (docs/05 §5): every sam clicked from [responseAt] on, count-ins left
-  /// out. Counted in, the first is the sam counted to; free, any sam after
-  /// the call. Rhythm practice times the phrase from whichever fits.
-  List<int> get turnSams => [
+  /// Where in the taal's cycle the phrase starts: matras after sam (D57).
+  /// 0 for a phrase that starts on sam, as every phrase did before tunes.
+  final int start;
+
+  /// Indexes into [clicks] of the matras the player's turn may start on
+  /// (docs/05 §5): every click at the phrase's place in the cycle ([start];
+  /// sam for most phrases) from [responseAt] on, count-ins left out. Counted
+  /// in, the first is the one counted to; free, any after the call. Rhythm
+  /// judging times the phrase from whichever fits.
+  List<int> get turnStarts => [
     for (var i = 0; i < clicks.length; i++)
-      if (clicks[i].position == 0 && !clicks[i].countIn && clicks[i].matra >= responseAt) i,
+      if (clicks[i].position == start && !clicks[i].countIn && clicks[i].matra >= responseAt) i,
   ];
 }
 
@@ -69,9 +75,10 @@ int countInLength(Taal? taal) {
   return last < 3 ? 3 : last;
 }
 
-/// With a free start and a taal, how many matras after the call the next
-/// sam comes: the player is told to start on a sam, so the listening window
-/// waits that long too (D54). 0 when the call is whole avartans.
+/// With a free start and a taal, how many matras after the call the
+/// phrase's place in the cycle comes round again (sam for most phrases; D54,
+/// D57): the player is told to start there, so the listening window waits
+/// that long too. 0 when the call is whole avartans.
 int matrasToNextSam(int callMatras, Taal? taal) =>
     taal == null ? 0 : (taal.matras - callMatras % taal.matras) % taal.matras;
 
@@ -86,27 +93,36 @@ int matrasToNextSam(int callMatras, Taal? taal) =>
 /// With [metronome] on, every matra of the call and of [responseMatras]
 /// matras of response clicks, marked by [taal] (sam, tali, khali), or all
 /// alike without one. Off, only the count-ins click.
+///
+/// [start] is where in the taal's cycle the phrase begins, in matras after
+/// sam (D57): a line of a tune may come in on khali. The call then starts on
+/// that matra, a count-in leads into it, and the turn starts there again.
 RoundClicks roundClicks({
   required int callMatras,
   required int responseMatras,
   Taal? taal,
   bool metronome = false,
   bool countIn = false,
+  int start = 0,
 }) {
   final c = countIn ? countInLength(taal) : 0;
-  Beat beat(int fromSam) =>
-      taal == null ? (fromSam == 0 ? Beat.sam : Beat.plain) : taal.beatAt(fromSam);
+  final s = taal == null ? 0 : start % taal.matras;
+  // Where a matra falls in the cycle, counted from sam (Dart's % keeps it
+  // in 0..matras-1, so matras before sam wrap to the end of the avartan).
   int position(int fromSam) => taal == null ? 0 : fromSam % taal.matras;
-  // A count-in clicks the matras just before a sam, as the taal marks
-  // them (the end of the previous avartan); without a taal, all alike.
-  List<Click> countInTo(int sam) => [
-    for (var k = c; k > 0; k--)
-      Click(
-        sam - k,
-        taal == null ? Beat.plain : taal.beatAt(taal.matras - k),
-        countIn: true,
-        position: taal == null ? 0 : position(taal.matras - k),
-      ),
+  Click at(int matra, int fromSam, {bool countIn = false}) => Click(
+    matra,
+    taal != null
+        ? taal.beatAt(position(fromSam))
+        : (!countIn && fromSam == 0 ? Beat.sam : Beat.plain),
+    countIn: countIn,
+    position: position(fromSam),
+  );
+  // A count-in clicks the matras just before the phrase's first one, as the
+  // taal marks them (for a phrase on sam, the end of the previous avartan);
+  // without a taal, all alike.
+  List<Click> countInTo(int matra) => [
+    for (var k = c; k > 0; k--) at(matra - k, s - k, countIn: true),
   ];
 
   final callAt = c;
@@ -114,19 +130,21 @@ RoundClicks roundClicks({
   final clicks = <Click>[
     if (countIn) ...countInTo(callAt),
     if (metronome)
-      for (var m = 0; m < callMatras; m++) Click(callAt + m, beat(m), position: position(m)),
+      for (var m = 0; m < callMatras; m++) at(callAt + m, s + m),
     if (countIn) ...countInTo(responseAt),
     if (metronome)
       for (var m = 0; m < responseMatras; m++)
-        // Counted in, the response starts its own cycle; free, the call's
-        // cycle carries on.
-        Click(
-          responseAt + m,
-          beat(countIn ? m : callMatras + m),
-          position: position(countIn ? m : callMatras + m),
-        ),
+        // Counted in, the response starts at the phrase's place again;
+        // free, the call's cycle carries on.
+        at(responseAt + m, countIn ? s + m : s + callMatras + m),
   ];
-  return RoundClicks(clicks: clicks, callAt: callAt, responseAt: responseAt, countInMatras: c);
+  return RoundClicks(
+    clicks: clicks,
+    callAt: callAt,
+    responseAt: responseAt,
+    countInMatras: c,
+    start: s,
+  );
 }
 
 /// The clicks for listening again without replaying the call: a count-in
@@ -138,6 +156,7 @@ RoundClicks retryClicks({
   Taal? taal,
   bool metronome = false,
   bool countIn = false,
+  int start = 0,
 }) {
   final c = countIn ? countInLength(taal) : 0;
   final full = roundClicks(
@@ -146,6 +165,7 @@ RoundClicks retryClicks({
     taal: taal,
     metronome: metronome,
     countIn: countIn,
+    start: start,
   );
   // roundClicks counts in twice around an empty call; keep the second.
   return RoundClicks(
@@ -156,5 +176,6 @@ RoundClicks retryClicks({
     callAt: c,
     responseAt: c,
     countInMatras: c,
+    start: full.start,
   );
 }

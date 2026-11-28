@@ -5,6 +5,7 @@ import 'package:aaroha/data/providers.dart';
 import 'package:aaroha/data/tunes.dart';
 import 'package:aaroha/practice/practice_settings.dart';
 import 'package:aaroha/tunes/tunes_screen.dart';
+import 'package:aaroha_core/aaroha_core.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -70,6 +71,16 @@ void main() {
     // clean-up timers run.
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 1));
+  });
+
+  test('a tune says whether and how it is timed', () {
+    String timing(String text) => tuneTiming(parseTune('x', text).tune!);
+    expect(timing('S R G'), startsWith('Pitch only'));
+    expect(timing('taal: keherwa\nS R G m'), 'Timed in Keherwa, each line from matra 1 (sam)');
+    expect(
+      timing('taal: teentaal\nstart: 9\nG m P - | D P m G'),
+      'Timed in Teentaal, each line from matra 9 (khali)',
+    );
   });
 
   test('saving again changes the tune; deleting removes it', () async {

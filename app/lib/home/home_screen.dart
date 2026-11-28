@@ -178,6 +178,13 @@ class _Options extends ConsumerWidget {
           items: [for (final t in playable) DropdownMenuItem(value: t.id, child: Text(t.title))],
           onChanged: (v) => v == null ? null : save(settings.copyWith(tuneId: v)),
         ),
+      if (playable.isNotEmpty)
+        Text(
+          tuneTiming(
+            (playable.where((t) => t.id == settings.tuneId).firstOrNull ?? playable.first).parsed!,
+          ),
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
       Align(
         alignment: Alignment.centerLeft,
         child: TextButton.icon(
@@ -342,13 +349,14 @@ class _Options extends ConsumerWidget {
               ),
               const SoundDelayTile(),
             ],
-            if (rhythm)
+            if (rhythm || settings.mode == PracticeMode.tune)
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Strict rhythm'),
-                subtitle: const Text(
+                subtitle: Text(
                   'Off: your timing is shown note by note, and the right swars pass. '
-                  'On: every note must also be on time',
+                  'On: every note must also be on time'
+                  '${rhythm ? '' : '. For tunes with a taal'}',
                 ),
                 value: settings.strictRhythm,
                 onChanged: (v) => save(settings.copyWith(strictRhythm: v)),
