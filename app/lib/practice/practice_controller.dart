@@ -867,6 +867,7 @@ class PracticeController extends Notifier<PracticeState?> {
           sams: _sams,
           matraFrames: matraFrames,
           delayFrames: delayFrames,
+          cycleMatras: s.settings.taal?.matras,
         ),
         strict: s.settings.strictRhythm,
       );
@@ -901,6 +902,7 @@ class PracticeController extends Notifier<PracticeState?> {
           'delayFrames': delayFrames,
           'measuredDelay': _timingDelayMs != null,
           'sam': ?result.rhythm?.sam,
+          'entry': ?result.rhythm?.entry,
           'drift': ?result.rhythm?.drift?.name,
           'tempoRatio': ?result.rhythm?.tempoRatio,
         },

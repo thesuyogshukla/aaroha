@@ -117,4 +117,50 @@ void main() {
     expect(fit.offset, closeTo(0.1, 1e-9));
     expect(fit.driftLabel, 'rushing 5.3%');
   });
+
+  group('where the player came in (D58)', () {
+    final four = parsePhrase('S R G m');
+    RhythmResult judgeFrom(Phrase p, AttemptResult r, {int? cycle}) => judgeRhythm(
+      p,
+      r,
+      sams: sams,
+      matraFrames: matra.toDouble(),
+      delayFrames: delay,
+      cycleMatras: cycle,
+    )!;
+
+    test('a matra late after a count-in: said once, the notes timed from there', () {
+      final r = judgeFrom(four, play(four, sam: sams[0] + matra), cycle: 8);
+      expect(r.entry, 1);
+      expect(r.notes.map((n) => n!.timing), everyElement(Timing.onTime));
+      expect(r.inTime, isFalse, reason: 'coming in wrong is a rhythm mistake');
+      expect(r.sam, sams[0] + matra);
+    });
+
+    test('straight after the call instead of on the next sam: half a keherwa cycle', () {
+      final r = judgeFrom(four, play(four, sam: sams[1] - 4 * matra), cycle: 8);
+      expect(r.entry.abs(), 4);
+      expect(r.count(Timing.onTime), 4);
+    });
+
+    test('a whole avartan late is still right', () {
+      final r = judgeFrom(four, play(four, sam: sams[0] + 8 * matra), cycle: 8);
+      expect([r.entry, r.inTime], [0, true]);
+    });
+
+    test('a late first note alone doesn\'t move the entry', () {
+      // S comes 0.5 late and R is on time: still timed from the expected
+      // start, with S late, not "came in a matra late" with R early.
+      final two = parsePhrase('S - R -');
+      final r = judgeFrom(two, play(two, sam: sams[0], offsets: [0.5, 0]), cycle: 8);
+      expect(r.entry, 0);
+      expect([r.notes[0]!.timing, r.notes[1]!.timing], [Timing.late, Timing.onTime]);
+    });
+
+    test('a steady drag of a third of a matra stays late, not a different entry', () {
+      final r = judgeFrom(four, play(four, sam: sams[0], offsets: [0.3, 0.3, 0.3, 0.3]), cycle: 8);
+      expect(r.entry, 0);
+      expect(r.count(Timing.late), 4);
+    });
+  });
 }

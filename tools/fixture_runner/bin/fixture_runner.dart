@@ -444,6 +444,7 @@ String _rhythmVerdict(List<DetectedNote> notes, YamlMap yaml, int sampleRate) {
     sams: [for (var k = 0; k < 3; k++) sam + (k * cycle).round()],
     matraFrames: matra,
     delayFrames: (((yaml['sound_delay_ms'] as num?) ?? 0) * sampleRate / 1000).round(),
+    cycleMatras: Taal.byId('${yaml['taal']}')?.matras,
   );
   if (r == null) return 'nothing to time';
   final held = r.notes.where((n) => n?.held != null).length;

@@ -161,6 +161,7 @@ bool replaySession(NativeCore core, String logPath) {
           sams: [for (final s in grid['sams'] as List) s as int],
           matraFrames: (grid['matraFrames'] as num).toDouble(),
           delayFrames: grid['delayFrames'] as int,
+          cycleMatras: Taal.byId('${session.settings['taal']}')?.matras,
         ),
       );
     }
@@ -194,6 +195,7 @@ bool replaySession(NativeCore core, String logPath) {
       stdout.writeln(
         '    timing: ${r.count(Timing.onTime)} on time, ${r.count(Timing.early)} early, '
         '${r.count(Timing.late)} late, ${r.heldShort} held short'
+        '${r.entry == 0 ? '' : ', came in ${r.entry > 0 ? '+' : ''}${r.entry} matras off'}'
         '${r.drift == null ? '' : ', ${r.drift!.name}'}'
         '${grid!['measuredDelay'] == true ? '' : ' (delay from the call\'s echo)'}',
       );

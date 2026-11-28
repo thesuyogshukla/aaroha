@@ -431,7 +431,14 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     }
     // Timing gives no swar away, so it is shown whatever a miss reveals.
     if (result.rhythm case final rhythm?) {
-      for (final t in _timingLines(rhythm, round.phrase, script, hideNames: hideNames)) {
+      for (final t in _timingLines(
+        rhythm,
+        round.phrase,
+        script,
+        hideNames: hideNames,
+        taal: s.settings.taal,
+        start: round.start,
+      )) {
         lines.add(line(t, theme.textTheme.bodyLarge));
       }
     } else if (s.timingNote != null && s.settings.mode == PracticeMode.rhythm) {
@@ -470,6 +477,8 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     Phrase phrase,
     Script script, {
     required bool hideNames,
+    Taal? taal,
+    int start = 0,
   }) {
     final written = phrase.sounding;
     List<String> names(bool Function(NoteTiming t) test) => [
@@ -482,8 +491,18 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     final early = names((t) => t.timing == Timing.early);
     final late = names((t) => t.timing == Timing.late);
     final short = names((t) => t.heldShort);
+    // Where the player came in, once, before the notes (D58).
+    String matraName(int p) => p == 0 ? 'sam' : 'matra ${p + 1}';
+    final cycle = taal?.matras;
+    final came = cycle == null
+        ? (r.entry > 0
+              ? 'You came in ${r.entry} ${r.entry == 1 ? 'matra' : 'matras'} late'
+              : 'You came in ${-r.entry} ${r.entry == -1 ? 'matra' : 'matras'} early')
+        : 'You came in on ${matraName((start + r.entry) % cycle)}, not on ${matraName(start)}';
     final out = <String>[
-      if (early.isEmpty && late.isEmpty && short.isEmpty) 'In time',
+      if (r.entry != 0) came,
+      if (r.entry == 0 && early.isEmpty && late.isEmpty && short.isEmpty) 'In time',
+      if (r.entry != 0 && early.isEmpty && late.isEmpty && short.isEmpty) 'Otherwise in time',
       if (early.isNotEmpty) which(early, 'early'),
       if (late.isNotEmpty) which(late, 'late'),
       if (short.isNotEmpty) which(short, 'held too short'),

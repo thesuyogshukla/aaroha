@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../model/phrase.dart';
 import 'judge.dart';
 
@@ -68,6 +70,7 @@ class RhythmResult {
     required this.sam,
     required this.matraFrames,
     this.delayFrames = 0,
+    this.entry = 0,
     this.drift,
     this.tempoRatio,
   });
@@ -76,9 +79,16 @@ class RhythmResult {
   /// it.
   final List<NoteTiming?> notes;
 
-  /// The sam the phrase was timed from: the engine frame its click was
-  /// scheduled at.
+  /// Where the phrase was timed from: the engine frame of the click the
+  /// player came in on (a sam, or the phrase's place in the cycle, when they
+  /// came in where they should; see [entry]).
   final int sam;
+
+  /// How many matras from where the phrase should start the player came in
+  /// (D58): 0 when right, 4 for a vibhag late in keherwa, -1 for a matra
+  /// early. The notes are timed from where the player came in, so a wrong
+  /// entry is said once instead of making every note early or late.
+  final int entry;
 
   /// The grid the notes were timed on: engine frames per matra, and the
   /// sound delay.
@@ -95,8 +105,9 @@ class RhythmResult {
   /// The player's tempo over the click's (above 1: faster).
   final double? tempoRatio;
 
-  /// Every note played was on time, and every hold held.
-  bool get inTime => notes.every((n) => n == null || n.good);
+  /// Came in where the phrase starts, every note played on time, and every
+  /// hold held.
+  bool get inTime => entry == 0 && notes.every((n) => n == null || n.good);
 
   int count(Timing t) => notes.where((n) => n?.timing == t).length;
   int get heldShort => notes.where((n) => n?.heldShort ?? false).length;
@@ -114,12 +125,20 @@ class RhythmResult {
 /// time reaches the mic [delayFrames] after its click (the sound delay,
 /// D45). Every target matched to a played note is timed, the right swar or
 /// not. Returns null when there are no sams or nothing to time.
+///
+/// The player may come in on the wrong matra: right after the call instead
+/// of waiting for sam, or a vibhag late (D58). The notes are timed from the
+/// matra that puts the most of them on time, the first note's matra when
+/// several do, and how far that is from where the phrase should start is
+/// [RhythmResult.entry]. With [cycleMatras], coming in any number of whole avartans late
+/// is still right.
 RhythmResult? judgeRhythm(
   Phrase phrase,
   AttemptResult result, {
   required List<int> sams,
   required double matraFrames,
   int delayFrames = 0,
+  int? cycleMatras,
   RhythmSettings settings = const RhythmSettings(),
 }) {
   final written = phrase.sounding;
@@ -133,15 +152,43 @@ RhythmResult? judgeRhythm(
 
   double offset(int i, int sam) =>
       (targets[i].played!.onset - sam - delayFrames) / matraFrames - written[i].start.toDouble();
-  var sam = sams.first;
-  var best = double.infinity;
-  for (final s in sams) {
-    final cost = timed.fold(0.0, (sum, i) => sum + offset(i, s).abs());
-    if (cost < best) {
-      best = cost;
-      sam = s;
+  // Every note's offset from the first place the phrase may start, then the
+  // whole number of matras that fits them best.
+  final s0 = sams.first;
+  final raw = [for (final i in timed) offset(i, s0)];
+  final expected = [for (final s in sams) ((s - s0) / matraFrames).round()];
+  int entryOf(int k) {
+    if (cycleMatras != null && cycleMatras > 0) {
+      final d = (k - expected.first) % cycleMatras;
+      return d * 2 > cycleMatras ? d - cycleMatras : d;
+    }
+    return expected.map((e) => k - e).reduce((a, b) => a.abs() <= b.abs() ? a : b);
+  }
+
+  // Where the first note says the player came in; another whole number of
+  // matras wins only by putting more notes on time (a short hold or a
+  // hurried note shouldn't move the entry).
+  final kFirst = raw.first.round();
+  final lo = raw.reduce(math.min).floor() - 1, hi = raw.reduce(math.max).ceil() + 1;
+  var k = kFirst;
+  ({int onTime, int away, double error})? best;
+  for (var c = lo; c <= hi; c++) {
+    final score = (
+      onTime: raw.where((o) => (o - c).abs() <= settings.tolerance).length,
+      away: (c - kFirst).abs(),
+      error: raw.fold(0.0, (sum, o) => sum + (o - c).abs()),
+    );
+    final better =
+        best == null ||
+        score.onTime > best.onTime ||
+        (score.onTime == best.onTime &&
+            (score.away < best.away || (score.away == best.away && score.error < best.error)));
+    if (better) {
+      best = score;
+      k = c;
     }
   }
+  final sam = s0 + (k * matraFrames).round();
 
   final notes = List<NoteTiming?>.filled(targets.length, null);
   for (final i in timed) {
@@ -177,6 +224,7 @@ RhythmResult? judgeRhythm(
     sam: sam,
     matraFrames: matraFrames,
     delayFrames: delayFrames,
+    entry: entryOf(k),
     tempoRatio: fit?.tempoRatio,
     drift: fit == null
         ? null
